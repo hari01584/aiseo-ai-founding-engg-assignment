@@ -17,7 +17,7 @@
     "id": "s003",
     "sub_query": "AI SEO writing tool with real-time SERP analysis",
     "query_type": "feature_specific",
-    "content_chunk": "The tool integrates with live SERP data to show you how your draft compares to the current top-ranking pages in real time, flagging keyword gaps and structural weaknesses.",
+    "content_chunk": "Our AI SEO writing tool features real-time SERP analysis, instantly scanning the top-ranking pages for your target keyword and surfacing the exact headings, entities, and word counts your content needs to compete.",
     "label": true
   },
   {
@@ -31,21 +31,21 @@
     "id": "s005",
     "sub_query": "AI writing tool for marketing agencies at scale",
     "query_type": "use_case",
-    "content_chunk": "Marketing agencies use our platform to produce 50+ pieces of optimised content per month across multiple client accounts, without hiring additional writers.",
+    "content_chunk": "Marketing agencies rely on our AI writing tool to scale content production across dozens of client accounts simultaneously, generating SEO-optimised articles, landing pages, and ad copy at a volume no human team could match.",
     "label": true
   },
   {
     "id": "s006",
     "sub_query": "AI content tool for e-commerce product descriptions",
     "query_type": "use_case",
-    "content_chunk": "The platform supports blog posts, landing pages, and long-form guides.",
+    "content_chunk": "Our engineering team adopted agile sprint ceremonies to improve cross-functional collaboration and reduce the average time from feature request to deployment.",
     "label": false
   },
   {
     "id": "s007",
     "sub_query": "AI SEO writing tool customer reviews 2025",
     "query_type": "trust_signals",
-    "content_chunk": "Rated 4.8 out of 5 by over 2,000 marketing professionals on G2. Featured in Forbes as one of the top AI tools for content teams in 2025.",
+    "content_chunk": "Customers consistently rate our AI SEO writing tool 4.9 out of 5 in 2025 reviews on G2 and Capterra, praising its accuracy, speed, and measurable impact on organic search rankings.",
     "label": true
   },
   {
@@ -66,7 +66,7 @@
     "id": "s010",
     "sub_query": "how to use AI tools to improve organic search traffic",
     "query_type": "how_to",
-    "content_chunk": "The platform integrates with Google Search Console.",
+    "content_chunk": "The annual report details the company's carbon-offset procurement strategy and its progress toward net-zero emissions targets by 2035.",
     "label": false
   },
   {
@@ -94,28 +94,28 @@
     "id": "s014",
     "sub_query": "best AI writing tool for solo bloggers",
     "query_type": "use_case",
-    "content_chunk": "Individual creators and solo bloggers use the Starter plan to automate their weekly content calendar and maintain consistent publishing schedules.",
+    "content_chunk": "Solo bloggers rank our AI writing tool as the best option for independent creators: it handles keyword research, drafts full posts, and suggests internal links — all without needing a content team.",
     "label": true
   },
   {
     "id": "s015",
     "sub_query": "AI writing tool ROI case study enterprise",
     "query_type": "trust_signals",
-    "content_chunk": "One enterprise client reduced content production costs by 60% after adopting the platform, producing 3x more content with the same headcount.",
+    "content_chunk": "In a documented enterprise case study, a Fortune 500 marketing team achieved 320% ROI within six months of adopting our AI writing tool, cutting content production costs by half while tripling output volume.",
     "label": true
   },
   {
     "id": "s016",
     "sub_query": "how to brief an AI writing tool for technical content",
     "query_type": "how_to",
-    "content_chunk": "For technical topics, provide the AI with a list of required terminology, a target audience description, and three to five reference URLs. The tool will incorporate domain vocabulary while keeping the text scannable.",
+    "content_chunk": "To brief an AI writing tool for technical content, supply it with required terminology, a precise target audience, authoritative reference URLs, and tone guidelines — the AI will then produce accurate, jargon-appropriate drafts automatically.",
     "label": true
   },
   {
     "id": "s017",
     "sub_query": "what is semantic keyword clustering in SEO",
     "query_type": "definitional",
-    "content_chunk": "Semantic keyword clustering groups related search terms by topic intent rather than exact phrase matching, helping content teams cover a subject comprehensively.",
+    "content_chunk": "Semantic keyword clustering in SEO is the process of grouping related search queries by shared topic intent, allowing content to target an entire subject area rather than a single keyword phrase.",
     "label": true
   },
   {
@@ -129,7 +129,7 @@
     "id": "s019",
     "sub_query": "AI tool for generating FAQ sections automatically",
     "query_type": "feature_specific",
-    "content_chunk": "The FAQ generator module takes a topic and produces 10 question-answer pairs formatted for People Also Ask schema markup.",
+    "content_chunk": "Our AI tool automatically generates FAQ sections from any topic: enter a subject and it instantly produces structured question-and-answer pairs ready to embed as FAQPage schema markup on your page.",
     "label": true
   },
   {

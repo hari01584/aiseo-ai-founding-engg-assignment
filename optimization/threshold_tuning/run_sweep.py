@@ -170,7 +170,8 @@ def run_sweep() -> List[dict]:
 
 
 def _print_table(results: List[dict]) -> None:
-    best   = max(results, key=lambda r: r["f1"])
+    best_f1 = max(r["f1"] for r in results)
+    best    = max((r for r in results if r["f1"] == best_f1), key=lambda r: r["threshold"])
     header = (f"{'threshold':>10} {'precision':>10} {'recall':>8} "
               f"{'f1':>8} {'tp':>4} {'fp':>4} {'fn':>4} {'tn':>4}")
     print("\n" + header)
