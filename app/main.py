@@ -16,7 +16,9 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Warm up heavy models on startup so the first request isn't slow."""
+    """Warm up heavy models on startup so the first request isn't slow.
+    spaCy models are downloaded automatically if not already installed.
+    """
     logger.info("AEGIS API starting up — warming NLP models…")
     try:
         from app.services.aeo_checks.direct_answer import _get_nlp
@@ -24,7 +26,7 @@ async def lifespan(app: FastAPI):
         _get_nlp()
         logger.info("spaCy model loaded ✓")
     except Exception as exc:  # noqa: BLE001
-        logger.warning("Could not pre-load spaCy model: %s", exc)
+        logger.error("Could not load spaCy model even after attempted download: %s", exc)
     yield
     logger.info("AEGIS API shutting down.")
 

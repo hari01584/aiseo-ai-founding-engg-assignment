@@ -27,13 +27,30 @@ from app.services.aeo_checks.base import BaseCheck, ParsedContent
 _nlp: Optional[spacy.language.Language] = None
 
 
+def _load_model(name: str) -> spacy.language.Language:
+    """Load a spaCy model, downloading it automatically if not present."""
+    try:
+        return spacy.load(name)
+    except OSError:
+        import subprocess
+        import sys
+        import logging
+
+        logging.getLogger(__name__).info("spaCy model '%s' not found — downloading…", name)
+        subprocess.run(
+            [sys.executable, "-m", "spacy", "download", name],
+            check=True,
+        )
+        return spacy.load(name)
+
+
 def _get_nlp() -> spacy.language.Language:
     global _nlp
     if _nlp is None:
         try:
-            _nlp = spacy.load("en_core_web_lg")
-        except OSError:
-            _nlp = spacy.load("en_core_web_sm")
+            _nlp = _load_model("en_core_web_lg")
+        except Exception:  # noqa: BLE001
+            _nlp = _load_model("en_core_web_sm")
     return _nlp
 
 
