@@ -27,6 +27,15 @@ async def lifespan(app: FastAPI):
         logger.info("spaCy model loaded ✓")
     except Exception as exc:  # noqa: BLE001
         logger.error("Could not load spaCy model even after attempted download: %s", exc)
+
+    try:
+        from app.services.gap_analyzer import warm_up_model
+
+        warm_up_model()
+        logger.info("Sentence-transformer model loaded ✓")
+    except Exception as exc:  # noqa: BLE001
+        logger.error("Could not load sentence-transformer model: %s", exc)
+
     yield
     logger.info("AEGIS API shutting down.")
 
