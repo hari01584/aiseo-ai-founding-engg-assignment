@@ -19,3 +19,4 @@ Similiarly checking into other test cases, words and declarative felt good enoug
 
 Similiarly I finished other testcases / individual tests, tweking anything required and each folder like aeo/check_... will have a file with name contianing full_integration, it will contain full data and tests for that case <read one of that file and add small example quick here>
 
+Now after generating GEO's structure using LLM, i first tested a basic query and content to see that it is atleast generating- however the important thing which was prompt and the threshold for sentence searches were important, so i built optimizers first- which are just simple script which runs my functions across datasets and help me decide / finalize on prompt and semantic similiarly parameter to identify if covered or not
