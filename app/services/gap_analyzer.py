@@ -53,8 +53,7 @@ logger = logging.getLogger(__name__)
 # Threshold constant — the API layer reads this; optimization scripts tune it
 # ---------------------------------------------------------------------------
 
-DEFAULT_SIMILARITY_THRESHOLD: float = 0.72
-
+DEFAULT_SIMILARITY_THRESHOLD: float = 0.66 # Tuned on the hand-labelled similarity dataset in optimization/data/similarity_samples.json — see optimization/threshold_tuning/run_sweep.py for details.
 # ---------------------------------------------------------------------------
 # Embedding model  (lazy singleton)
 # ---------------------------------------------------------------------------
