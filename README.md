@@ -137,9 +137,9 @@ python -m optimization.prompt_tuning.run_prompt_eval
 |---|---|
 | [`iteration_1_too_long_subqueries.csv`](https://github.com/hari01584/aiseo-ai-founding-engg-assignment/blob/main/optimization/prompt_tuning/logs/iteration_1_too_long_subqueries.csv) | Sub-queries too verbose — "X for Y for Z" chaining |
 | [`iteration_2_trust_signals_not_good.csv`](https://github.com/hari01584/aiseo-ai-founding-engg-assignment/blob/main/optimization/prompt_tuning/logs/iteration_2_trust_signals_not_good.csv) | `trust_signals` reads like academic queries ("case studies of...") not real user searches |
-| [`final_iteration_kept_results.csv`](https://github.com/hari01584/aiseo-ai-founding-engg-assignment/blob/main/optimization/prompt_tuning/logs/final_iteration_kept_results.csv) | Final prompt — composite score = 1.0 on all 5 queries |
+| [`final_iteration_kept_results.csv`](https://github.com/hari01584/aiseo-ai-founding-engg-assignment/blob/main/optimization/prompt_tuning/logs/final_iteration_kept_results.csv) | Final prompt — output felt most natural and appropriate across all 5 queries |
 
-The full step-by-step thinking, observations, and changes for each iteration are in [`PROMPT_LOG.md`](https://github.com/hari01584/aiseo-ai-founding-engg-assignment/blob/main/PROMPT_LOG.md).
+The full step-by-step thinking, observations, and changes for each iteration are in [`my_journey/how_i_made_records.md`](https://github.com/hari01584/aiseo-ai-founding-engg-assignment/blob/main/my_journey/how_i_made_records.md).
 
 ---
 
