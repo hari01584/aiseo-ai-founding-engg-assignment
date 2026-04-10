@@ -1,547 +1,253 @@
-# 🧪 Take-Home Assignment — AI Engineer
-## AEGIS — Answer Engine & Generative Intelligence Suite
+# AEGIS — Answer Engine & Generative Intelligence Suite
 
-> **Time Budget:** 6–8 hours  
-> **Submission Deadline:** 72 hours from receipt  
-> **Role:** AI Engineer (Mid–Senior)
+AI-powered content intelligence platform that scores and diagnoses content for **AEO** (Answer Engine Optimization) and **GEO** (Generative Engine Optimization).
 
----
+Two live endpoints:
 
-## 👋 Welcome
-
-Thank you for making it to this stage of the interview process.
-
-This assignment reflects the real work you'd be doing here — designing LLM pipelines, engineering prompts, building NLP scoring systems, and making thoughtful decisions about when to use an LLM and when a simpler method is better.
-
-We evaluate **your reasoning as much as your output**. A focused solution that covers 60% of the scope with excellent prompt design and clean NLP code beats a rushed implementation that covers everything poorly.
-
-**Read this document fully before writing a single line of code.**
+| Endpoint | Feature |
+|---|---|
+| `POST /api/aeo/analyze` | AEO Content Scorer — 3 NLP checks, score 0–100 |
+| `POST /api/fanout/generate` | Query Fan-Out Engine — LLM sub-query generation + semantic gap analysis |
 
 ---
 
-## 🧭 Background — What is AEGIS?
+## 1. Installation & Running
 
-The way people discover information is changing rapidly. Instead of ten blue links, users now receive direct answers from AI systems: **ChatGPT Search**, **Perplexity**, **Google AI Mode**, and **Gemini**.
+### Prerequisites
 
-This creates a new challenge for content teams: *How do you ensure your content gets cited, surfaced, and recommended by these AI systems rather than a competitor's?*
+- Python 3.11+
+- An **OpenAI API key** (`gpt-4o-mini` is used by default)
 
-Two disciplines have emerged:
+### Steps
 
-- **AEO (Answer Engine Optimization)** — Structuring content so AI search engines can extract clean, direct answers (think: featured snippets, AI overviews, passage indexing).
-- **GEO (Generative Engine Optimization)** — Making content citation-worthy and factually dense enough that LLMs actively choose to cite it when generating answers.
+```bash
+# 1. Clone the repo
+git clone https://github.com/hari01584/aiseo-ai-founding-engg-assignment.git
+cd aiseo-ai-founding-engg-assignment
 
-**AEGIS** is a content intelligence platform that scores, diagnoses, and improves content for AEO and GEO — and monitors how brands are represented across AI platforms in near-real-time.
+# 2. Create and activate a virtual environment
+python -m venv .venv
+source .venv/bin/activate
 
----
+# 3. Install dependencies
+pip install -r requirements.txt
 
-## 🗺️ System Overview
+# 4. Download the spaCy model (used by Check A)
+python -m spacy download en_core_web_lg
+# Fallback: en_core_web_sm is auto-tried if lg is unavailable
 
-AEGIS has four core modules. You will build parts of **two of them**. Understanding the full picture will help you make better architectural decisions.
-
-```
-┌───────────────────────────────────────────────────────────────┐
-│                        AEGIS Platform                          │
-│                                                                │
-│  ┌─────────────────┐  ┌─────────────────┐  ┌───────────────┐ │
-│  │  AEO Optimizer  │  │  GEO Optimizer  │  │ Brand Monitor │ │
-│  │                 │  │                 │  │               │ │
-│  │ NLP checks for  │  │ LLM + embedding │  │ Track brand   │ │
-│  │ AI answer       │  │ checks for      │  │ mentions on   │ │
-│  │ extraction      │  │ citation-worth  │  │ AI platforms  │ │
-│  └─────────────────┘  └─────────────────┘  └───────────────┘ │
-│                                                                │
-│  ┌────────────────────────────────────────────────────────┐   │
-│  │                  Query Fan-Out Engine                   │   │
-│  │  LLM simulates how AI search decomposes a query →      │   │
-│  │  embeddings detect content coverage gaps               │   │
-│  └────────────────────────────────────────────────────────┘   │
-└───────────────────────────────────────────────────────────────┘
+# 5. Set up your environment file
+cp .env.sample .env
+# Then open .env and paste your API key
 ```
 
----
+`.env.sample` contains:
 
-## 🎯 Your Assignment
-
-### What To Build
-
-You will build a **Python API service** implementing two AI-powered features:
-
-| Feature | Core AI Challenge |
-|---------|------------------|
-| **Feature 1 — AEO Content Scorer** | NLP pipeline to score content across 3 structured checks |
-| **Feature 2 — Query Fan-Out Engine** | LLM prompt engineering + semantic similarity gap analysis |
-
----
-
-## Feature 1 — AEO Content Scorer
-
-A REST endpoint that accepts a URL or pasted content, applies **three NLP-based checks**, and returns an **AEO Readiness Score (0–100)** with per-check diagnostics and recommendations.
-
-The core engineering challenge here is building a **clean, modular NLP scoring pipeline** — each check should be independently testable and the system should be easy to extend with additional checks.
-
----
-
-### Check A — Direct Answer Detection
-
-**What it tests:** Does the first paragraph answer the likely primary query in 60 words or fewer, with a clear declarative statement?
-
-**Implementation requirements:**
-
-1. Extract the first paragraph from the content (first `<p>` tag in HTML, or first paragraph break in plain text)
-2. Word count: must be ≤ 60 to pass
-3. Sentence completeness check: the paragraph should be a declarative statement — not a question, not a fragment. Use spaCy's dependency parser to verify subject + root verb presence
-4. Hedge phrase detection: penalize if any of these appear — `"it depends"`, `"may vary"`, `"in some cases"`, `"this varies"`, `"generally speaking"`
-
-**Scoring (max 20 pts):**
-
-| Condition | Score |
-|-----------|-------|
-| ≤ 60 words + declarative + no hedge | 20 |
-| ≤ 60 words but hedging or incomplete | 12 |
-| 61–90 words | 8 |
-| > 90 words | 0 |
-
-**Expected output fields:** `word_count`, `has_hedge_phrase`, `is_declarative`, `recommendation`
-
----
-
-### Check B — H-tag Hierarchy Checker
-
-**What it tests:** Is there a valid, logical heading structure (H1 → H2 → H3)?
-
-**Implementation requirements:**
-
-1. Parse all H-tags in DOM order using BeautifulSoup
-2. Validate the following rules:
-   - Exactly one `<h1>` is present
-   - No heading level is skipped (H1 → H3 without an H2 is a violation)
-   - No H-tag appears before the H1
-
-**Scoring (max 20 pts):**
-
-| Condition | Score |
-|-----------|-------|
-| 0 violations | 20 |
-| 1–2 violations | 12 |
-| 3+ violations OR missing H1 | 0 |
-
-**Expected output fields:** `violations` (list of rule violations with description), `h_tags_found` (ordered list), `recommendation`
-
----
-
-### Check C — Snippet Readability Scorer
-
-**What it tests:** Is the content readable at Flesch-Kincaid Grade Level 7–9? This is the target range for AI answer extraction — complex enough to be credible, simple enough to be extractable.
-
-**Implementation requirements:**
-
-1. Strip boilerplate (nav, footer, header) from HTML before scoring
-2. Compute Flesch-Kincaid Grade Level using `textstat`
-3. Identify the **3 most complex sentences** in the text (rank by: syllable count ÷ word count per sentence)
-
-**Scoring (max 20 pts):**
-
-| FK Grade Level | Score |
-|----------------|-------|
-| 7–9 | 20 |
-| 6 or 10 | 14 |
-| 5 or 11 | 8 |
-| ≤ 4 or ≥ 12 | 0 |
-
-**Expected output fields:** `fk_grade_level`, `target_range`, `complex_sentences` (top 3), `recommendation`
-
----
-
-### Score Aggregation
-
-```
-Raw Score = Check A + Check B + Check C   (max 60 pts)
-AEO Readiness Score = (Raw Score / 60) × 100   (normalized to 100)
+```env
+# Paste your OpenAI API key here
+OPENAI_API_KEY=sk-...
 ```
 
-**Score Bands:**
+### Start the server
 
-| Range | Label |
-|-------|-------|
-| 85–100 | AEO Optimized ✅ |
-| 65–84 | Needs Improvement 🟡 |
-| 40–64 | Significant Gaps 🔴 |
-| 0–39 | Not AEO Ready ⛔ |
+```bash
+uvicorn app.main:app --reload
+```
+
+The API will be available at `http://localhost:8000`.
+Interactive docs: `http://localhost:8000/docs`
 
 ---
 
-## Feature 2 — Query Fan-Out Engine
+## 2. Running Tests
 
-This is the more open-ended, AI-heavy feature. It tests your ability to **design LLM prompts for structured output**, handle model responses defensively, and apply **semantic embeddings** for content gap analysis.
-
-### What it does
-
-1. User provides a target query: e.g., `"best AI writing tool for SEO"`
-2. Your service calls an LLM to generate **10–15 sub-queries** across 6 query types — simulating how AI search engines decompose a query to build a comprehensive answer
-3. Each sub-query is checked against the user's provided content using **sentence-transformer embeddings + cosine similarity**
-4. Returns a gap map: which sub-query types are covered, which are missing
-
----
-
-### The 6 Sub-Query Types
-
-| Type | Description | Example |
-|------|-------------|---------|
-| `comparative` | Query vs. alternatives | "AI writing tool vs human writers for SEO" |
-| `feature_specific` | Specific capability focus | "AI writing tool with keyword clustering" |
-| `use_case` | Real-world application | "AI writing tool for agency content at scale" |
-| `trust_signals` | Reviews, credibility, proof | "AI SEO writing tool case studies 2025" |
-| `how_to` | Procedural / instructional | "how to use AI to optimize blog content for SEO" |
-| `definitional` | Conceptual / "what is" | "what is AI-assisted SEO content writing" |
-
----
-
-### Prompt Engineering Requirements
-
-Your LLM prompt is a **core deliverable** — we will read it carefully. It must:
-
-- Clearly specify the 6 sub-query types and require at least 2 from each
-- Instruct the model to return a **valid JSON object** (not markdown, not prose)
-- Be robust to the query topic — it should work equally well for `"best CRM software"` as for `"best AI writing tool for SEO"`
-- Include a concrete example of the expected output format in the prompt itself
-
-You may use any LLM.
-
-> 💡 Think carefully about: How do you prevent the model from hallucinating extra fields? How do you handle the case where the model returns fewer than 10 sub-queries? How do you validate the JSON before returning it to the caller?
-
----
-
-### Semantic Gap Analysis (Required)
-
-Once sub-queries are generated, check content coverage using embeddings:
-
-1. Vectorize the user's content into sentence-level chunks using `sentence-transformers` (`all-mpnet-base-v2` or `all-MiniLM-L6-v2`)
-2. Vectorize each sub-query
-3. For each sub-query, compute the **max cosine similarity** against all content chunks
-4. If max similarity ≥ **0.72** → mark sub-query as `covered: true`
-5. If max similarity < 0.72 → mark as `covered: false` (gap)
-
-> **Why 0.72?** This threshold is a starting point. In your README, explain whether you'd tune this, and how.
-
----
-
-## 📦 Deliverables
-
-### 1. Working API (Required)
-- Language: **Python**
-- Framework: **FastAPI**
-- Two working endpoints:
-
-```
-POST /api/aeo/analyze
-POST /api/fanout/generate
-```
-
-### 2. Your README (Required)
-Your `README.md` must cover:
-- Exact commands to run the project locally
-- All required environment variables (API keys etc.)
-- Which parts you completed vs. skipped, and why
-- Your prompt design decisions — what you tried, what worked, what didn't
-- The gap analysis threshold: why 0.72, or what value you chose and why
-- What you'd improve with more time
-
-### 3. Tests (Required)
-- Unit tests for **all three AEO check functions** (not just the endpoint)
-- At minimum: one passing case and one failing case per check
-- Framework: `pytest`
-- Bonus: a test that mocks the LLM call and validates your JSON parsing logic
-
-### 4. (Bonus) Prompt Iteration Log
-A `PROMPT_LOG.md` file documenting:
-- Your first prompt draft
-- What was wrong with it (hallucinations? wrong format? missing types?)
-- What you changed and why
-- Your final prompt
-
-This is one of the best signals of an experienced AI engineer. Even a brief 1-page log is valuable.
-
----
-
-## 📡 API Contracts
-
-### `POST /api/aeo/analyze`
-
-**Request:**
-```json
-{
-  "input_type": "url",
-  "input_value": "https://example.com/article"
-}
-```
-```json
-{
-  "input_type": "text",
-  "input_value": "Your raw HTML or plain text content..."
-}
-```
-
-**Response `200 OK`:**
-```json
-{
-  "aeo_score": 72,
-  "band": "Needs Improvement",
-  "checks": [
-    {
-      "check_id": "direct_answer",
-      "name": "Direct Answer Detection",
-      "passed": false,
-      "score": 8,
-      "max_score": 20,
-      "details": {
-        "word_count": 74,
-        "threshold": 60,
-        "is_declarative": true,
-        "has_hedge_phrase": false
-      },
-      "recommendation": "Your opening paragraph is 74 words. Trim it to under 60 words with a direct, declarative answer."
-    },
-    {
-      "check_id": "htag_hierarchy",
-      "name": "H-tag Hierarchy",
-      "passed": true,
-      "score": 20,
-      "max_score": 20,
-      "details": {
-        "violations": [],
-        "h_tags_found": ["h1", "h2", "h2", "h3", "h2"]
-      },
-      "recommendation": null
-    },
-    {
-      "check_id": "readability",
-      "name": "Snippet Readability",
-      "passed": false,
-      "score": 8,
-      "max_score": 20,
-      "details": {
-        "fk_grade_level": 11.2,
-        "target_range": "7-9",
-        "complex_sentences": [
-          "The multifaceted nature of contemporary content optimization...",
-          "Heuristically speaking, syntactic structures that...",
-          "Upon examination of longitudinal data sets..."
-        ]
-      },
-      "recommendation": "Content reads at Grade 11.2. Shorten sentences and replace technical jargon with plain language to reach Grade 7–9."
-    }
-  ]
-}
-```
-
-**Error `422 Unprocessable Entity`** (invalid URL, unreachable page, etc.):
-```json
-{
-  "error": "url_fetch_failed",
-  "message": "Could not retrieve content from the provided URL.",
-  "detail": "Connection timeout after 10s"
-}
-```
-
----
-
-### `POST /api/fanout/generate`
-
-**Request:**
-```json
-{
-  "target_query": "best AI writing tool for SEO",
-  "existing_content": "Optional — paste article text here to enable gap analysis"
-}
-```
-
-**Response `200 OK`:**
-```json
-{
-  "target_query": "best AI writing tool for SEO",
-  "model_used": "gemini-1.5-flash",
-  "total_sub_queries": 13,
-  "sub_queries": [
-    {
-      "type": "comparative",
-      "query": "Jasper AI vs Surfer SEO vs Clearscope for content optimization",
-      "covered": false,
-      "similarity_score": 0.41
-    },
-    {
-      "type": "feature_specific",
-      "query": "AI writing tool with real-time SERP analysis",
-      "covered": true,
-      "similarity_score": 0.79
-    },
-    {
-      "type": "trust_signals",
-      "query": "AI SEO content tool reviews from marketing agencies 2025",
-      "covered": false,
-      "similarity_score": 0.38
-    }
-  ],
-  "gap_summary": {
-    "covered": 5,
-    "total": 13,
-    "coverage_percent": 38,
-    "covered_types": ["feature_specific", "use_case"],
-    "missing_types": ["comparative", "trust_signals", "how_to", "definitional"]
-  }
-}
-```
-
-> **Note:** `covered`, `similarity_score`, and `gap_summary` are only present when `existing_content` is provided. If no content is provided, omit these fields and return sub-queries only.
-
-**Error — LLM failure `503 Service Unavailable`:**
-```json
-{
-  "error": "llm_unavailable",
-  "message": "Fan-out generation failed. The LLM returned an invalid response after 3 retries.",
-  "detail": "JSONDecodeError on attempt 3"
-}
-```
-
----
-
-## 🛠️ Technical Guidelines
-
-### Stack
-- **Language:** Python 3.11+
-- **Framework:** FastAPI + Uvicorn
-- **NLP:** spaCy (`en_core_web_sm` minimum, `en_core_web_lg` preferred), `textstat`
-- **Embeddings:** `sentence-transformers` (`all-MiniLM-L6-v2` for speed, `all-mpnet-base-v2` for accuracy — your call, justify it)
-- **LLM:** Gemini 1.5 Flash or GPT-4o-mini
-- **HTML Parsing:** BeautifulSoup4 + `httpx` for URL fetching
-
-### Suggested `requirements.txt`
-```
-fastapi
-uvicorn[standard]
-httpx
-beautifulsoup4
-spacy
-textstat
-sentence-transformers
-torch                    # required by sentence-transformers
-google-generativeai      # if using Gemini
-openai                   # if using OpenAI
-pydantic>=2.0
+```bash
 pytest
-pytest-asyncio
 ```
 
-### Key Engineering Decisions to Address in Your README
+The test suite is split into two top-level groups:
 
-**1. LLM JSON reliability**  
-LLMs don't always return valid JSON. How do you handle a malformed response? Do you retry? Use a fallback? Validate schema with Pydantic before returning?
+### `tests/aeo/` — AEO Scorer checks
 
-**2. Embedding model choice**  
-`all-MiniLM-L6-v2` is 5× faster than `all-mpnet-base-v2` but less accuracy. Which did you pick and why? For a production system, what would you consider?
+| File | What it covers |
+|---|---|
+| [`tests/aeo/check_a_direct_answer_detection/test_first_paragraph.py`](https://github.com/hari01584/aiseo-ai-founding-engg-assignment/blob/main/tests/aeo/check_a_direct_answer_detection/test_first_paragraph.py) | First-paragraph extraction from HTML and plain text — edge cases like short paragraphs, nested tags, plain-text line breaks |
+| [`tests/aeo/check_a_direct_answer_detection/test_count_words.py`](https://github.com/hari01584/aiseo-ai-founding-engg-assignment/blob/main/tests/aeo/check_a_direct_answer_detection/test_count_words.py) | Word-count scoring — boundary values at 60, 61, 90, 91 words |
+| [`tests/aeo/check_a_direct_answer_detection/test_has_hedge_phrase.py`](https://github.com/hari01584/aiseo-ai-founding-engg-assignment/blob/main/tests/aeo/check_a_direct_answer_detection/test_has_hedge_phrase.py) | Hedge-phrase detection — all canonical phrases, case-insensitivity, phrases embedded mid-sentence |
+| [`tests/aeo/check_a_direct_answer_detection/test_is_declarative.py`](https://github.com/hari01584/aiseo-ai-founding-engg-assignment/blob/main/tests/aeo/check_a_direct_answer_detection/test_is_declarative.py) | spaCy declarative check — confirms subject + root verb presence, rejects questions and fragments |
+| [`tests/aeo/check_a_direct_answer_detection/test_check_a_direct_answer_full_integration.py`](https://github.com/hari01584/aiseo-ai-founding-engg-assignment/blob/main/tests/aeo/check_a_direct_answer_detection/test_check_a_direct_answer_full_integration.py) | Full `DirectAnswerCheck.run()` — every score band (0/8/12/20), plain text and HTML inputs, all output fields asserted |
+| [`tests/aeo/check_b_htag_hierachy/test_htag_hierarchy.py`](https://github.com/hari01584/aiseo-ai-founding-engg-assignment/blob/main/tests/aeo/check_b_htag_hierachy/test_htag_hierarchy.py) | Full `HtagHierarchyCheck.run()` — perfect hierarchy, skipped levels, tag before H1, missing H1, 3+ violations; both raw soup and full HTML paths |
+| [`tests/aeo/check_c_snippet_reader/test_sentence_splitting.py`](https://github.com/hari01584/aiseo-ai-founding-engg-assignment/blob/main/tests/aeo/check_c_snippet_reader/test_sentence_splitting.py) | `split_sentences` — handles abbreviations, trailing punctuation, short fragments |
+| [`tests/aeo/check_c_snippet_reader/test_complexity_scoring.py`](https://github.com/hari01584/aiseo-ai-founding-engg-assignment/blob/main/tests/aeo/check_c_snippet_reader/test_complexity_scoring.py) | Per-sentence complexity (syllables ÷ words) — simple vs. technical sentences |
+| [`tests/aeo/check_c_snippet_reader/test_top_complex_sentences.py`](https://github.com/hari01584/aiseo-ai-founding-engg-assignment/blob/main/tests/aeo/check_c_snippet_reader/test_top_complex_sentences.py) | `top_complex_sentences` ranking — correct top-3 ordering, truncation at 200 chars |
+| [`tests/aeo/check_c_snippet_reader/test_check_b_snippet_reader_full_integration.py`](https://github.com/hari01584/aiseo-ai-founding-engg-assignment/blob/main/tests/aeo/check_c_snippet_reader/test_check_b_snippet_reader_full_integration.py) | Full `ReadabilityCheck.run()` — all FK score bands, boilerplate-stripping (nav/footer must NOT skew the score), plain text and HTML |
+| [`tests/aeo/test_api_aeo.py`](https://github.com/hari01584/aiseo-ai-founding-engg-assignment/blob/main/tests/aeo/test_api_aeo.py) | End-to-end API for `POST /api/aeo/analyze` — URL input, HTML input, plain-text input; response envelope shape; score in [0,100]; valid band string |
 
-**3. Similarity threshold**  
-0.72 is provided as a starting point. Did you keep it? Test it? Tune it? Explain your reasoning.
+### `tests/geo/` — Fan-Out Engine checks
 
-**4. Content parsing robustness**  
-How do you handle pages with no clear first paragraph? JavaScript-heavy pages that return empty HTML? Pages behind a login wall?
+| File | What it covers |
+|---|---|
+| [`tests/geo/test_query_fanout.py`](https://github.com/hari01584/aiseo-ai-founding-engg-assignment/blob/main/tests/geo/test_query_fanout.py) | `generate_sub_queries()` unit tests — all LLM calls mocked; happy path, fence-wrapped JSON, bad JSON on all retries → `LLMUnavailableError`, too few sub-queries, unknown types filtered |
+| [`tests/geo/test_gap_analysis.py`](https://github.com/hari01584/aiseo-ai-founding-engg-assignment/blob/main/tests/geo/test_gap_analysis.py) | `gap_analyzer.py` — pure math tests (`l2_normalise`, `build_gap_summary`), full pipeline with real embeddings: related queries → covered, unrelated queries → not covered |
+| [`tests/geo/test_api_fanout.py`](https://github.com/hari01584/aiseo-ai-founding-engg-assignment/blob/main/tests/geo/test_api_fanout.py) | End-to-end API for `POST /api/fanout/generate` — no content (gap fields absent), with content (gap_summary present), LLM 503 error shape, gap analysis failure is non-fatal (returns 200), validation errors → 422 |
 
-**5. Failure modes**  
-What happens if the LLM times out mid-request? Does your API return something useful or does it throw a 500?
-
----
-
-## ✅ Evaluation Criteria
-
-We will score your submission across these dimensions:
-
-| Dimension | Weight | What We Look For |
-|-----------|--------|-----------------|
-| **Prompt Engineering Quality** | 25% | Is the prompt well-structured, defensive, and clearly designed? Does it produce consistent, valid JSON? |
-| **NLP Pipeline Design** | 25% | Are checks modular, independently testable, and correct on standard cases? |
-| **AI System Thinking** | 20% | Do your README answers show you've thought about failure modes, model tradeoffs, and threshold tuning? |
-| **Code Quality** | 15% | Readable, typed, consistent. Pydantic models used correctly. |
-| **Testing** | 15% | Do tests cover real edge cases and the LLM error path? |
-
-### Green Flags 🟢
-- A prompt with explicit JSON schema in the system message or examples
-- Retry logic on LLM calls with exponential backoff
-- spaCy used thoughtfully (not just `nlp(text)` with no explanation)
-- Honest discussion in your README about where your implementation falls short
-- A `PROMPT_LOG.md` showing your iteration process
-- Choosing `all-MiniLM-L6-v2` over `all-mpnet-base-v2` and justifying it with latency reasoning
-
-### Red Flags 🔴
-- Prompt that's a single sentence with no structure
-- No handling when the LLM returns invalid JSON — API crashes
-- Cosine similarity computed incorrectly (using raw dot product on non-normalized vectors)
-- No tests, or tests that mock everything and verify nothing real
-- A README that says "install requirements, run the app" and nothing else
+> **Tip — verify specific failure modes directly:**
+> ```bash
+> # LLM retry exhaustion → 503
+> pytest tests/geo/test_query_fanout.py -k "all_retries_fail" -v
+> pytest tests/geo/test_api_fanout.py -k "llm_failure" -v
+>
+> # Gap analysis crash → still returns 200 with sub-queries
+> pytest tests/geo/test_api_fanout.py -k "gap_analysis_failure" -v
+> ```
 
 ---
 
-## 📤 Submission Instructions
+## 3. Optimization Scripts
 
-1. Push your code to a **private GitHub repository**
-2. Add `[RECRUITER_GITHUB_HANDLE]` as a collaborator
-3. Email the repo link to `[RECRUITER_EMAIL]` with subject:  
-   `AEGIS AI Engineer Assignment — [Your Name]`
-4. In the email body, include:
-   - Time spent
-   - The one decision you're least confident about
-   - The one thing you'd improve with another 2 hours
+These are standalone tuning scripts — not pytest tests. They were used during development to arrive at the final prompt and similarity threshold, and can be re-run at any time to reproduce the results.
 
----
+### 3a. Threshold Tuning
 
-## ❓ FAQ
+Finds the optimal cosine similarity threshold for gap analysis using a hand-labelled dataset of `(sub_query, content_chunk, label)` triples.
 
-**Can I use AI assistants while working on this?**  
-Yes — use whatever you normally use. We will discuss your solution in the follow-up interview and expect you to explain every decision clearly. The prompt engineering section is especially important to own.
-
-**What if I can't complete everything?**  
-Ship what you can. A clean Feature 1 with excellent tests beats two broken features. Tell us clearly in your README what you skipped and why.
-
-**My LLM call is slow / rate-limited. What should I do?**  
-Build in retry logic. If you're hitting free-tier limits, cache a fixed LLM response for testing purposes — just document that you did this.
-
-**Can I change the API contract?**  
-Reasonably, yes. Document your changes and the reason in your README.
-
-**Should I use async or sync for the FastAPI endpoints?**  
-Your call — but sentence-transformers and spaCy are CPU-bound, and LLM calls are I/O-bound. Think about what concurrency model makes sense here and mention it in your README.
-
----
-
-## 📁 Suggested Project Structure
-
-```
-aegis-assignment/
-├── ASSIGNMENT_README.md       # This file
-├── README.md                  # Your README
-├── PROMPT_LOG.md              # (Bonus) Prompt iteration log
-├── requirements.txt
-├── app/
-│   ├── main.py                # FastAPI app
-│   ├── api/
-│   │   ├── aeo.py             # AEO router + endpoint
-│   │   └── fanout.py          # Fan-out router + endpoint
-│   ├── services/
-│   │   ├── content_parser.py  # HTML fetch + parse + boilerplate strip
-│   │   ├── aeo_checks/
-│   │   │   ├── base.py        # BaseCheck abstract class
-│   │   │   ├── direct_answer.py
-│   │   │   ├── htag_hierarchy.py
-│   │   │   └── readability.py
-│   │   ├── fanout_engine.py   # LLM call, prompt, response parsing
-│   │   └── gap_analyzer.py    # Embedding + cosine similarity logic
-│   └── models/
-│       └── schemas.py         # All Pydantic request/response models
-└── tests/
-    ├── test_direct_answer.py
-    ├── test_htag_hierarchy.py
-    ├── test_readability.py
-    └── test_fanout_parsing.py  # Tests LLM response JSON parsing (mocked)
+```bash
+python -m optimization.threshold_tuning.run_sweep
 ```
 
+**How it works:** Sweeps thresholds from 0.40 → 0.95 in steps of 0.02, computing precision / recall / F1 at each value against [`optimization/data/similarity_samples.json`](https://github.com/hari01584/aiseo-ai-founding-engg-assignment/blob/main/optimization/data/similarity_samples.json).
+
+**Output:** [`optimization/threshold_tuning/reports/sweep_20260410_194820.csv`](https://github.com/hari01584/aiseo-ai-founding-engg-assignment/blob/main/optimization/threshold_tuning/reports/sweep_20260410_194820.csv)
+
+**Chosen threshold: `0.66`** — F1 = 0.96, precision = 1.0, recall = 0.923. See Decision 4c below for the full reasoning.
+
+### 3b. Prompt Tuning
+
+Evaluates each prompt iteration across 5 fixed target queries and scores structural compliance (valid JSON, all 6 types present, ≥2 per type, count in range).
+
+```bash
+python -m optimization.prompt_tuning.run_prompt_eval
+```
+
+**Queries tested:** [`optimization/data/prompt_eval_queries.json`](https://github.com/hari01584/aiseo-ai-founding-engg-assignment/blob/main/optimization/data/prompt_eval_queries.json)
+
+**Iteration logs:**
+
+| Log | What went wrong |
+|---|---|
+| [`iteration_1_too_long_subqueries.csv`](https://github.com/hari01584/aiseo-ai-founding-engg-assignment/blob/main/optimization/prompt_tuning/logs/iteration_1_too_long_subqueries.csv) | Sub-queries too verbose — "X for Y for Z" chaining |
+| [`iteration_2_trust_signals_not_good.csv`](https://github.com/hari01584/aiseo-ai-founding-engg-assignment/blob/main/optimization/prompt_tuning/logs/iteration_2_trust_signals_not_good.csv) | `trust_signals` reads like academic queries ("case studies of...") not real user searches |
+| [`final_iteration_kept_results.csv`](https://github.com/hari01584/aiseo-ai-founding-engg-assignment/blob/main/optimization/prompt_tuning/logs/final_iteration_kept_results.csv) | Final prompt — composite score = 1.0 on all 5 queries |
+
+The full step-by-step thinking, observations, and changes for each iteration are in [`PROMPT_LOG.md`](https://github.com/hari01584/aiseo-ai-founding-engg-assignment/blob/main/PROMPT_LOG.md).
+
 ---
 
-Good luck — we're genuinely excited to see how you approach this. 🚀
+## 4. Key Engineering Decisions
+
+### 4a. LLM JSON Reliability
+
+LLMs don't always return clean JSON even when asked explicitly. Three layers of defence are in [`app/services/fanout_engine.py`](https://github.com/hari01584/aiseo-ai-founding-engg-assignment/blob/main/app/services/fanout_engine.py):
+
+1. **Fence stripping** — `strip_markdown_fences()` removes ` ```json ... ``` ` wrappers that models sometimes add despite being told not to.
+2. **Pydantic validation** — each raw dict is passed through the `SubQuery` model. Items with unknown `type` values are silently dropped rather than crashing — the list is re-checked for minimum count constraints after filtering.
+3. **Retry with exponential back-off** — up to 3 attempts, delay doubling each time (`1s → 2s → 4s`). After all retries fail, `LLMUnavailableError` is raised and the API returns a clean `503` with the error detail string.
+
+Verify the retry and 503 path:
+```bash
+pytest tests/geo/test_query_fanout.py -k "all_retries_fail" -v
+pytest tests/geo/test_api_fanout.py -k "llm_failure" -v
+```
+
+### 4b. Embedding Model Choice
+
+`all-MiniLM-L6-v2` was chosen over `all-mpnet-base-v2`:
+
+- ~5× faster on CPU (~22 ms vs ~110 ms per sentence)
+- 384-dim vs 768-dim — lower memory footprint, matters at scale
+- Running the threshold sweep with both models showed the best-F1 threshold stabilised at the same value (`0.66`), confirming MiniLM is accurate enough for sentence-level semantic similarity at this task
+
+For a GPU-backed production service, `mpnet` would be worth reconsidering for harder comparative queries. For this use case the speed win is clear and the accuracy difference is negligible on the labelled set.
+
+### 4c. Similarity Threshold
+
+The assignment suggests `0.72`. After running the threshold sweep, **`0.66`** was chosen instead.
+
+Full results: [`optimization/threshold_tuning/reports/sweep_20260410_194820.csv`](https://github.com/hari01584/aiseo-ai-founding-engg-assignment/blob/main/optimization/threshold_tuning/reports/sweep_20260410_194820.csv)
+
+| Threshold | Precision | Recall | F1 |
+|---|---|---|---|
+| 0.66 | 1.00 | 0.923 | **0.96** ✅ chosen |
+| 0.68 | 1.00 | 0.846 | 0.917 |
+| 0.72 | 1.00 | 0.846 | 0.917 |
+| 0.80 | 1.00 | 0.692 | 0.818 |
+
+`0.72` achieves F1 = 0.917 — not bad, but `0.66` reaches F1 = 0.96 with equal precision and meaningfully better recall. In a content tool, false "gap" flags (telling users their content doesn't cover something it actually does) are more damaging to trust than the reverse, so the higher-recall threshold is the right trade-off here. The threshold is a single constant (`DEFAULT_SIMILARITY_THRESHOLD` in `gap_analyzer.py`) — trivial to update as more labelled data arrives.
+
+### 4d. Content Parsing Robustness
+
+Handled in [`app/services/content_parser.py`](https://github.com/hari01584/aiseo-ai-founding-engg-assignment/blob/main/app/services/content_parser.py):
+
+- **Boilerplate stripping** — `nav`, `header`, `footer`, `aside`, `script`, `style`, `noscript` are removed before computing the readability score and extracting body text. This prevents a site's navigation menu from skewing the FK grade level.
+- **Plain-text fallback** — if the input does not look like HTML, the parser takes a plain-text path splitting on double newlines. The API works equally well for pasted raw text.
+- **URL fetch** — `httpx` with a 10s timeout and a bot `User-Agent`. Timeout, HTTP errors, and network failures all map to a `ValueError` → `422 Unprocessable Entity` with the original error message.
+
+**Known limitation (intentional simplification):** First-paragraph extraction uses the first `<p>` tag. Real sites are messier — see "What I'd Improve" below.
+
+### 4e. Failure Modes
+
+| Failure | Behaviour |
+|---|---|
+| URL unreachable / timeout | `422` with `error: url_fetch_failed` and the exception message |
+| LLM returns bad JSON on all retries | `503` with `error: llm_unavailable` and `JSONDecodeError` detail |
+| Gap analysis crashes (e.g. embedding model error) | `200` — sub-queries still returned; `gap_summary` is `null` (non-fatal degradation) |
+| Blank `input_value` or `target_query` | `422` from Pydantic field validation before any service code runs |
+
+```bash
+# Verify gap analysis failure is non-fatal
+pytest tests/geo/test_api_fanout.py -k "gap_analysis_failure" -v
+```
+
+---
+
+## 5. Scope & What Was Skipped
+
+The solution covers all required deliverables:
+
+- ✅ `POST /api/aeo/analyze` — all 3 checks with correct scoring formula and bands
+- ✅ `POST /api/fanout/generate` — LLM fan-out with all 6 sub-query types, retry logic, Pydantic validation
+- ✅ Semantic gap analysis — `sentence-transformers`, L2-normalised cosine similarity, threshold-based coverage labelling
+- ✅ Unit + integration tests for every AEO check function, plus API-level and mocked-LLM tests for GEO
+- ✅ Optimization scripts (threshold sweep + prompt eval) with logged artifacts
+
+**Focus distribution:** Most deliberate engineering effort went into Feature 2 — specifically the prompt iteration process and the threshold tuning methodology — because those are where the AI judgement calls are hardest to get right and easiest to do poorly.
+
+**Content parsing is intentionally simplified.** First-paragraph extraction uses the first `<p>` tag. This is sufficient for well-structured articles but breaks on real-world sites in several ways:
+
+- **JavaScript-rendered pages** — `httpx` fetches static HTML only. SPAs return an empty or near-empty body. The correct fix is a headless browser (Playwright or Selenium) for URL inputs.
+- **Complex layouts** — many real pages have short `<p>` tags inside cookie banners, ad containers, or pull-quote divs that appear before the article body. A robust implementation would skip paragraphs below a minimum meaningful length (e.g. < 15 words), prefer `<article>` or `<main>` blocks, and fall back to the second/third paragraph if the first looks like UI chrome.
+- **Login-walled pages** — the fetcher has no session/cookie support; these return a login form rather than article content.
+
+These are real production concerns but out of scope for a 6–8 hour assignment. The architecture (a single `fetch_and_parse` function with a clearly defined interface) makes them straightforward to address later.
+
+---
+
+## 6. What I'd Improve With More Time
+
+**Feature 1 — AEO Scorer**
+
+- Replace the first-`<p>` heuristic with a proper article-body extractor (e.g. `trafilatura`, or a `<main>`/`<article>` tag search with minimum word-count filtering) so the parser works correctly on real news and marketing pages.
+- Add Playwright/Selenium support for JS-rendered URLs — even a simple `"js_render": true` flag in the request body would handle the most common case.
+- Make the hedge phrase list configurable from a file rather than hardcoded in source, so it can be extended without a code change.
+
+**Feature 2 — Query Fan-Out Engine**
+
+- The current prompt uses static hardcoded examples. A production system would maintain a small per-industry example bank (SaaS, e-commerce, healthcare, etc.) and inject the closest-matching example at request time — reducing the chance the model overfits to the sample domain.
+- Sub-query generation could be pipelined: one prompt per type (6 parallel async calls), each with a dedicated critic pass that rewrites any query that reads like a sentence fragment rather than a real search. Higher quality at the cost of more latency — acceptable with async.
+- Expand the hand-labelled similarity dataset beyond 20 samples (aim for 100+, balanced across industries and difficulty levels) for a more statistically reliable F1 estimate and threshold selection.
+
+**Infrastructure**
+
+- Cache the embedding model in a shared memory object between workers (currently it is loaded fresh per process).
+- Add a `GET /health` endpoint reporting spaCy and sentence-transformer load status.
+- Rate-limit the URL fetch path to prevent abuse.
