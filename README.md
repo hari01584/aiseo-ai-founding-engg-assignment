@@ -9,6 +9,8 @@ Two live endpoints:
 | `POST /api/aeo/analyze` | AEO Content Scorer — 3 NLP checks, score 0–100 |
 | `POST /api/fanout/generate` | Query Fan-Out Engine — LLM sub-query generation + semantic gap analysis |
 
+> 📓 **Full build log** — how I approached the problem, AEO design decisions, the complete prompt iteration process (all 3 drafts with observations), and threshold tuning reasoning are all documented in [`my_journey/how_i_made_records.md`](https://github.com/hari01584/aiseo-ai-founding-engg-assignment/blob/main/my_journey/how_i_made_records.md).
+
 ---
 
 ## 1. Installation & Running
@@ -143,7 +145,7 @@ python -m optimization.prompt_tuning.run_prompt_eval
 | [`iteration_2_trust_signals_not_good.csv`](https://github.com/hari01584/aiseo-ai-founding-engg-assignment/blob/main/optimization/prompt_tuning/logs/iteration_2_trust_signals_not_good.csv) | `trust_signals` reads like academic queries ("case studies of...") not real user searches |
 | [`final_iteration_kept_results.csv`](https://github.com/hari01584/aiseo-ai-founding-engg-assignment/blob/main/optimization/prompt_tuning/logs/final_iteration_kept_results.csv) | Final prompt — output felt most natural and appropriate across all 5 queries |
 
-The full step-by-step thinking, observations, and changes for each iteration are in [`my_journey/how_i_made_records.md`](https://github.com/hari01584/aiseo-ai-founding-engg-assignment/blob/main/my_journey/how_i_made_records.md).
+The full step-by-step thinking, observations, and changes for each iteration — including the first draft prompt, what broke at each stage, and the final design rationale — are in [`my_journey/how_i_made_records.md`](https://github.com/hari01584/aiseo-ai-founding-engg-assignment/blob/main/my_journey/how_i_made_records.md).
 
 ---
 
