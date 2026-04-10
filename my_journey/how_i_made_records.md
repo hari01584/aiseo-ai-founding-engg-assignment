@@ -16,3 +16,6 @@ Now I went back to the cases and worked on each checks Step by step- First I not
 I also deliberately removed more cases like skipping <p> tags inside headers, this is to keep the assignment simple- WHile also writing edge cases there were some instances where i had minor doubts: for example what does: Example of first paragraph break in plain text mean? so i used chatgpt to ask with some examples and aligned test case behaviour accordingly
 
 Similiarly checking into other test cases, words and declarative felt good enough however hedge phrases had few words and I researched what all others can be said / used as hedge phrases / words, So i simply expanded the list to contain more such words
+
+Similiarly I finished other testcases / individual tests, tweking anything required and each folder like aeo/check_... will have a file with name contianing full_integration, it will contain full data and tests for that case <read one of that file and add small example quick here>
+
