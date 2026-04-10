@@ -69,27 +69,31 @@ The test suite is split into two top-level groups:
 
 ### `tests/aeo/` — AEO Scorer checks
 
-| File | What it covers |
-|---|---|
-| [`tests/aeo/check_a_direct_answer_detection/test_first_paragraph.py`](https://github.com/hari01584/aiseo-ai-founding-engg-assignment/blob/main/tests/aeo/check_a_direct_answer_detection/test_first_paragraph.py) | First-paragraph extraction from HTML and plain text — edge cases like short paragraphs, nested tags, plain-text line breaks |
-| [`tests/aeo/check_a_direct_answer_detection/test_count_words.py`](https://github.com/hari01584/aiseo-ai-founding-engg-assignment/blob/main/tests/aeo/check_a_direct_answer_detection/test_count_words.py) | Word-count scoring — boundary values at 60, 61, 90, 91 words |
-| [`tests/aeo/check_a_direct_answer_detection/test_has_hedge_phrase.py`](https://github.com/hari01584/aiseo-ai-founding-engg-assignment/blob/main/tests/aeo/check_a_direct_answer_detection/test_has_hedge_phrase.py) | Hedge-phrase detection — all canonical phrases, case-insensitivity, phrases embedded mid-sentence |
-| [`tests/aeo/check_a_direct_answer_detection/test_is_declarative.py`](https://github.com/hari01584/aiseo-ai-founding-engg-assignment/blob/main/tests/aeo/check_a_direct_answer_detection/test_is_declarative.py) | spaCy declarative check — confirms subject + root verb presence, rejects questions and fragments |
-| [`tests/aeo/check_a_direct_answer_detection/test_check_a_direct_answer_full_integration.py`](https://github.com/hari01584/aiseo-ai-founding-engg-assignment/blob/main/tests/aeo/check_a_direct_answer_detection/test_check_a_direct_answer_full_integration.py) | Full `DirectAnswerCheck.run()` — every score band (0/8/12/20), plain text and HTML inputs, all output fields asserted |
-| [`tests/aeo/check_b_htag_hierachy/test_htag_hierarchy.py`](https://github.com/hari01584/aiseo-ai-founding-engg-assignment/blob/main/tests/aeo/check_b_htag_hierachy/test_htag_hierarchy.py) | Full `HtagHierarchyCheck.run()` — perfect hierarchy, skipped levels, tag before H1, missing H1, 3+ violations; both raw soup and full HTML paths |
-| [`tests/aeo/check_c_snippet_reader/test_sentence_splitting.py`](https://github.com/hari01584/aiseo-ai-founding-engg-assignment/blob/main/tests/aeo/check_c_snippet_reader/test_sentence_splitting.py) | `split_sentences` — handles abbreviations, trailing punctuation, short fragments |
-| [`tests/aeo/check_c_snippet_reader/test_complexity_scoring.py`](https://github.com/hari01584/aiseo-ai-founding-engg-assignment/blob/main/tests/aeo/check_c_snippet_reader/test_complexity_scoring.py) | Per-sentence complexity (syllables ÷ words) — simple vs. technical sentences |
-| [`tests/aeo/check_c_snippet_reader/test_top_complex_sentences.py`](https://github.com/hari01584/aiseo-ai-founding-engg-assignment/blob/main/tests/aeo/check_c_snippet_reader/test_top_complex_sentences.py) | `top_complex_sentences` ranking — correct top-3 ordering, truncation at 200 chars |
-| [`tests/aeo/check_c_snippet_reader/test_check_b_snippet_reader_full_integration.py`](https://github.com/hari01584/aiseo-ai-founding-engg-assignment/blob/main/tests/aeo/check_c_snippet_reader/test_check_b_snippet_reader_full_integration.py) | Full `ReadabilityCheck.run()` — all FK score bands, boilerplate-stripping (nav/footer must NOT skew the score), plain text and HTML |
-| [`tests/aeo/test_api_aeo.py`](https://github.com/hari01584/aiseo-ai-founding-engg-assignment/blob/main/tests/aeo/test_api_aeo.py) | End-to-end API for `POST /api/aeo/analyze` — URL input, HTML input, plain-text input; response envelope shape; score in [0,100]; valid band string |
+**[`tests/aeo/check_a_direct_answer_detection/`](https://github.com/hari01584/aiseo-ai-founding-engg-assignment/blob/main/tests/aeo/check_a_direct_answer_detection/)**
+- First-paragraph extraction from HTML and plain text — short paragraphs, nested tags, plain-text line breaks
+- Word-count scoring at every boundary (60, 61, 90, 91 words)
+- Hedge-phrase detection — all canonical phrases, case-insensitivity, mid-sentence matches
+- spaCy declarative check — subject + root verb presence, questions and fragments rejected
+- Full `DirectAnswerCheck.run()` integration across every score band (0/8/12/20), both plain-text and HTML inputs
+
+**[`tests/aeo/check_b_htag_hierachy/`](https://github.com/hari01584/aiseo-ai-founding-engg-assignment/blob/main/tests/aeo/check_b_htag_hierachy/)**
+- Perfect hierarchy, skipped heading levels, tag before H1, missing H1, 3+ violations
+- Every score band (0/12/20) tested via both raw BeautifulSoup and the full `fetch_and_parse` path
+
+**[`tests/aeo/check_c_snippet_reader/`](https://github.com/hari01584/aiseo-ai-founding-engg-assignment/blob/main/tests/aeo/check_c_snippet_reader/)**
+- Sentence splitting — abbreviations, trailing punctuation, short fragments
+- Per-sentence complexity scoring (syllables ÷ words) and correct top-3 ranking
+- Full `ReadabilityCheck.run()` across all FK score bands, including the boilerplate-stripping case (nav/footer must not skew the grade level)
+
+**[`tests/aeo/test_api_aeo.py`](https://github.com/hari01584/aiseo-ai-founding-engg-assignment/blob/main/tests/aeo/test_api_aeo.py)**
+- End-to-end `POST /api/aeo/analyze` — URL, HTML, and plain-text inputs; response envelope shape; score in [0,100]; valid band string
 
 ### `tests/geo/` — Fan-Out Engine checks
 
-| File | What it covers |
-|---|---|
-| [`tests/geo/test_query_fanout.py`](https://github.com/hari01584/aiseo-ai-founding-engg-assignment/blob/main/tests/geo/test_query_fanout.py) | `generate_sub_queries()` unit tests — all LLM calls mocked; happy path, fence-wrapped JSON, bad JSON on all retries → `LLMUnavailableError`, too few sub-queries, unknown types filtered |
-| [`tests/geo/test_gap_analysis.py`](https://github.com/hari01584/aiseo-ai-founding-engg-assignment/blob/main/tests/geo/test_gap_analysis.py) | `gap_analyzer.py` — pure math tests (`l2_normalise`, `build_gap_summary`), full pipeline with real embeddings: related queries → covered, unrelated queries → not covered |
-| [`tests/geo/test_api_fanout.py`](https://github.com/hari01584/aiseo-ai-founding-engg-assignment/blob/main/tests/geo/test_api_fanout.py) | End-to-end API for `POST /api/fanout/generate` — no content (gap fields absent), with content (gap_summary present), LLM 503 error shape, gap analysis failure is non-fatal (returns 200), validation errors → 422 |
+**[`tests/geo/`](https://github.com/hari01584/aiseo-ai-founding-engg-assignment/blob/main/tests/geo/)**
+- `generate_sub_queries()` with all LLM calls mocked — happy path, fence-wrapped JSON, bad JSON on all retries → `LLMUnavailableError`, too few sub-queries, unknown types filtered
+- Gap analysis pipeline with real embeddings — semantically related queries marked covered, unrelated queries marked as gaps
+- End-to-end `POST /api/fanout/generate` — no content (gap fields absent), with content (gap_summary present), LLM 503 error shape, gap analysis failure non-fatal (returns 200), validation errors → 422
 
 > **Tip — verify specific failure modes directly:**
 > ```bash
