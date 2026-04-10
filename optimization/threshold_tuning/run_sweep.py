@@ -53,6 +53,7 @@ _THRESHOLD_END   = 0.95
 _THRESHOLD_STEP  = 0.02
 
 _CSV_FIELDS = ["threshold", "precision", "recall", "f1", "tp", "fp", "fn", "tn"]
+_SCORES_CSV_FIELDS = ["id", "sub_query", "content_chunk", "query_type", "label", "similarity_score"]
 
 # ---------------------------------------------------------------------------
 # Pure metric helpers (no model, no I/O — independently testable)
@@ -122,6 +123,24 @@ def run_sweep() -> List[dict]:
     #    Each sample i pairs sub_query_i with content_chunk_i only
     similarities = np.sum(query_vecs * chunk_vecs, axis=1).astype(np.float32)
 
+    # 3b. Write per-pair scores CSV so each comparison can be inspected
+    _REPORTS_DIR.mkdir(parents=True, exist_ok=True)
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    scores_path = _REPORTS_DIR / f"pair_scores_{timestamp}.csv"
+    with scores_path.open("w", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=_SCORES_CSV_FIELDS)
+        writer.writeheader()
+        for sample, sim in zip(samples, similarities):
+            writer.writerow({
+                "id":               sample["id"],
+                "sub_query":        sample["sub_query"],
+                "content_chunk":    sample["content_chunk"],
+                "query_type":       sample["query_type"],
+                "label":            sample["label"],
+                "similarity_score": round(float(sim), 4),
+            })
+    print(f"Pair scores written → {scores_path}")
+
     # 4. Sweep — reuses apply_threshold from gap_analyzer (same function the
     #    API calls; ensures the sweep reflects production behaviour exactly)
     results = []
@@ -132,8 +151,6 @@ def run_sweep() -> List[dict]:
         results.append(row)
 
     # 5. Write CSV
-    _REPORTS_DIR.mkdir(parents=True, exist_ok=True)
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     csv_path  = _REPORTS_DIR / f"sweep_{timestamp}.csv"
     with csv_path.open("w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=_CSV_FIELDS)
