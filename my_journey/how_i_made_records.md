@@ -141,6 +141,8 @@ how it works is it takes list of hand labelled samples for example:
     "label": true
   },
 
+Similiarly using gap analyzer and running the same on bigger vs smaller model, I noticed the drop in accuracy was manageable therefore used the smaller model
+
 and runs the script to find the best F1 score match across different threshold, which we finalise as our optimum value.. ie:
 ![Optimize threshold for covering](threshold_optimization_coverage.png)
 
