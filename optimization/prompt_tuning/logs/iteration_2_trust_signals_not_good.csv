@@ -1,0 +1,66 @@
+run_id,query_id,target_query,comparative,feature_specific,use_case,trust_signals,how_to,definitional,total_sub_queries,count_in_range,all_6_types_present,min_2_per_type,composite_score,missing_types,error
+20260410_185325_9e68e6,q001,best AI writing tool for SEO,"## comparative
+- Jasper vs Copy.ai for SEO
+- Surfer SEO vs Writesonic comparison","## feature_specific
+- AI writing tool with keyword optimization
+- SEO content generation features in AI tools","## use_case
+- AI writing for SEO content marketers
+- best AI tool for SEO blog writing","## trust_signals
+- AI writing tool for SEO user reviews
+- case studies of AI writing for SEO","## how_to
+- how to use AI for SEO writing
+- optimize blog posts with AI writing tools","## definitional
+- what is AI writing for SEO
+- definition of AI content generation for SEO",12,True,True,True,1.0,,
+20260410_185325_9e68e6,q002,best CRM software for startups,"## comparative
+- HubSpot vs Salesforce for startups
+- Zoho CRM vs Pipedrive for new businesses","## feature_specific
+- CRM with email marketing integration
+- best CRM for lead tracking","## use_case
+- CRM for early-stage startups
+- best CRM for small business growth","## trust_signals
+- CRM software startup user reviews
+- case studies of successful CRM implementations","## how_to
+- how to choose CRM for a startup
+- set up CRM for new business","## definitional
+- what is CRM software for startups
+- features of CRM for small businesses",12,True,True,True,1.0,,
+20260410_185325_9e68e6,q003,project management tools for remote teams,"## comparative
+- Trello vs Asana for remote teams
+- ClickUp vs Jira for distributed teams","## feature_specific
+- project management tool with time tracking
+- best PM software for task automation","## use_case
+- project management for remote software teams
+- best tools for managing virtual teams","## trust_signals
+- remote team project management software reviews
+- case studies on remote project management tools","## how_to
+- how to choose project management tools for remote work
+- manage remote teams with project management software","## definitional
+- what are project management tools for remote teams
+- definition of remote project management software",12,True,True,True,1.0,,
+20260410_185325_9e68e6,q004,email marketing platform for e-commerce,"## comparative
+- Mailchimp vs Klaviyo for e-commerce
+- Constant Contact vs Sendinblue e-commerce","## feature_specific
+- email automation features for e-commerce
+- best email templates for online stores","## use_case
+- email marketing for fashion e-commerce
+- successful email campaigns for online retailers","## trust_signals
+- e-commerce email platform user reviews
+- Klaviyo success stories for e-commerce","## how_to
+- how to create email campaigns for e-commerce
+- optimize email open rates for online shops","## definitional
+- what is e-commerce email marketing
+- email marketing platform features explained",12,True,True,True,1.0,,
+20260410_185325_9e68e6,q005,cloud storage solutions for small businesses,"## comparative
+- Google Drive vs Dropbox for small businesses
+- OneDrive vs Box for small business storage","## feature_specific
+- cloud storage with file sharing features
+- best cloud storage for collaboration tools","## use_case
+- cloud storage for small business teams
+- best cloud solutions for startups","## trust_signals
+- cloud storage solutions small business reviews
+- case studies cloud storage for SMBs","## how_to
+- how to choose cloud storage for small business
+- set up cloud storage for team collaboration","## definitional
+- what is cloud storage for businesses
+- cloud storage solutions definition",12,True,True,True,1.0,,

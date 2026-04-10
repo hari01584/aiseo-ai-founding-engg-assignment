@@ -75,7 +75,7 @@ You must use EXACTLY these identifiers as the "type" field value:
   comparative      — how the subject compares against competitors or alternatives
   feature_specific — a specific feature, capability, or attribute
   use_case         — a concrete real-world application or audience segment
-  trust_signals    — reviews, testimonials, case studies, awards, proof points
+  trust_signals    — social proof: used by teams/companies, most popular among professionals, trusted by industry
   how_to           — a procedural, instructional, or "how do I" angle
   definitional     — a conceptual, explanatory, or "what is" angle
 
@@ -83,8 +83,12 @@ HARD CONSTRAINTS
 1. Generate at least 2 sub-queries for EVERY type (12 minimum across all six types).
 2. Total sub-queries must be between 10 and 15 inclusive.
 3. Each sub-query must be a realistic search query string — not a sentence fragment.
-4. Return ONLY a valid JSON object. No markdown fences. No prose. No extra fields.
-5. The JSON must match this schema exactly:
+4. Keep each query concise: 4–9 words maximum. No redundant prepositions or filler
+   words (avoid patterns like "X for Y for Z" — collapse to "X for Y Z" instead).
+5. Write queries the way a real user would type them into a search engine — natural,
+   direct, no unnecessary repetition.
+6. Return ONLY a valid JSON object. No markdown fences. No prose. No extra fields.
+7. The JSON must match this schema exactly:
 
 {
   "sub_queries": [
@@ -96,18 +100,18 @@ HARD CONSTRAINTS
 EXAMPLE — for target query "best project management software for remote teams":
 {
   "sub_queries": [
-    {"type": "comparative", "query": "Asana vs Monday.com vs Notion for remote teams"},
-    {"type": "comparative", "query": "Jira vs ClickUp for distributed engineering teams"},
-    {"type": "feature_specific", "query": "project management tool with async video updates"},
-    {"type": "feature_specific", "query": "PM software with time zone management features"},
-    {"type": "use_case", "query": "project management software for remote marketing agencies"},
-    {"type": "use_case", "query": "best PM tool for fully distributed startup teams"},
-    {"type": "trust_signals", "query": "project management software reviews from remote-first companies"},
-    {"type": "trust_signals", "query": "Monday.com vs Asana case studies remote work 2025"},
-    {"type": "how_to", "query": "how to manage remote team projects with no meetings"},
-    {"type": "how_to", "query": "how to track distributed team progress in real time"},
+    {"type": "comparative", "query": "Asana vs Monday.com for remote teams"},
+    {"type": "comparative", "query": "Jira vs ClickUp distributed engineering"},
+    {"type": "feature_specific", "query": "PM tool with async video updates"},
+    {"type": "feature_specific", "query": "project management time zone features"},
+    {"type": "use_case", "query": "project management for remote agencies"},
+    {"type": "use_case", "query": "best PM tool distributed startup teams"},
+    {"type": "trust_signals", "query": "project management tools used by large teams"},
+    {"type": "trust_signals", "query": "most popular PM software among engineering teams"},
+    {"type": "how_to", "query": "how to manage remote projects without meetings"},
+    {"type": "how_to", "query": "track distributed team progress in real time"},
     {"type": "definitional", "query": "what is asynchronous project management"},
-    {"type": "definitional", "query": "definition of remote-first project workflow"}
+    {"type": "definitional", "query": "remote-first project workflow definition"}
   ]
 }
 

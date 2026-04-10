@@ -20,3 +20,109 @@ Similiarly checking into other test cases, words and declarative felt good enoug
 Similiarly I finished other testcases / individual tests, tweking anything required and each folder like aeo/check_... will have a file with name contianing full_integration, it will contain full data and tests for that case <read one of that file and add small example quick here>
 
 Now after generating GEO's structure using LLM, i first tested a basic query and content to see that it is atleast generating- however the important thing which was prompt and the threshold for sentence searches were important, so i built optimizers first- which are just simple script which runs my functions across datasets and help me decide / finalize on prompt and semantic similiarly parameter to identify if covered or not
+
+Finally after setting up the optimizer and a basic prompt engineering- It was time to optimize .. at first attempt the prompt was:
+You are a query decomposition engine for an AI content optimisation platform.
+
+YOUR ROLE
+You simulate how AI search engines (Perplexity, ChatGPT Search, Google AI Mode) break
+a user query into sub-queries before generating a comprehensive answer. Your output is
+used to identify gaps in a content article.
+
+TASK
+Given a target query, generate between 10 and 15 sub-queries that span all six types
+listed below. Cover the query topic thoroughly and generically — the same prompt must
+work for any domain (SEO tools, CRM software, project management, etc.).
+
+THE SIX SUB-QUERY TYPES
+You must use EXACTLY these identifiers as the "type" field value:
+
+  comparative      — how the subject compares against competitors or alternatives
+  feature_specific — a specific feature, capability, or attribute
+  use_case         — a concrete real-world application or audience segment
+  trust_signals    — reviews, testimonials, case studies, awards, proof points
+  how_to           — a procedural, instructional, or "how do I" angle
+  definitional     — a conceptual, explanatory, or "what is" angle
+
+HARD CONSTRAINTS
+1. Generate at least 2 sub-queries for EVERY type (12 minimum across all six types).
+2. Total sub-queries must be between 10 and 15 inclusive.
+3. Each sub-query must be a realistic search query string — not a sentence fragment.
+4. Return ONLY a valid JSON object. No markdown fences. No prose. No extra fields.
+5. The JSON must match this schema exactly:
+
+{
+  "sub_queries": [
+    {"type": "<one of the six types above>", "query": "<search query string>"},
+    ...
+  ]
+}
+
+EXAMPLE — for target query "best project management software for remote teams":
+{
+  "sub_queries": [
+    {"type": "comparative", "query": "Asana vs Monday.com vs Notion for remote teams"},
+    {"type": "comparative", "query": "Jira vs ClickUp for distributed engineering teams"},
+    {"type": "feature_specific", "query": "project management tool with async video updates"},
+    {"type": "feature_specific", "query": "PM software with time zone management features"},
+    {"type": "use_case", "query": "project management software for remote marketing agencies"},
+    {"type": "use_case", "query": "best PM tool for fully distributed startup teams"},
+    {"type": "trust_signals", "query": "project management software reviews from remote-first companies"},
+    {"type": "trust_signals", "query": "Monday.com vs Asana case studies remote work 2025"},
+    {"type": "how_to", "query": "how to manage remote team projects with no meetings"},
+    {"type": "how_to", "query": "how to track distributed team progress in real time"},
+    {"type": "definitional", "query": "what is asynchronous project management"},
+    {"type": "definitional", "query": "definition of remote-first project workflow"}
+  ]
+}
+
+Now generate sub-queries for the target query provided by the user.\
+
+and output as we see by comparisons:
+![Too long subquery generated](llm_optimize_iter1_too_long_subquery.png)
+
+Check file at: optimization/prompt_tuning/logs/iteration_1_too_long_subqueries.csv
+
+This was good but i was noticing a lot of big subquery sentences for example i saw:
+## use_case
+- AI writing tools for SEO content creation for blogs
+- best AI writing software for e-commerce SEO
+
+for "best AI writing tool for SEO"
+
+that "AI writing tools for SEO content creation for blogs" felt wrong.. so we improved
+
+To improve this, I added instructions for:
+4. Keep each query concise: 4–9 words maximum. No redundant prepositions or filler
+   words (avoid patterns like "X for Y for Z" — collapse to "X for Y Z" instead).
+5. Write queries the way a real user would type them into a search engine — natural,
+   direct, no unnecessary repetition.
+
+and there was a line which said to follow the example / structure exactly.. removing it did the trick
+
+Next when I made the iteration.. It all felt good except trust signals which is:
+![Trust signal too generic / not realistic](trust_signal_not_good_iter2.png)
+
+Notice how some of the signals generated were:
+"## trust_signals
+- AI writing tool for SEO user reviews
+- case studies of AI writing for SEO"
+"## trust_signals
+- CRM software startup user reviews
+- case studies of successful CRM implementations"
+
+I don't think people ask for "case studies" or "user reviews" I think they write more generic terms like 'best' or AI Writing tools with best reviews, etc.. just to confirm i went back and researched internet + chatgpt to finetune the signals.. 
+
+I came across some resources / reddit posts which then i used chatgpt to critize and summarize against previously generated posts- it gave certain examples like:
+![ChatGPT Generated trust signals subqueries](chat_gpt_generated_trust_signal_subquery.png)
+
+Incorporating the same feedback, I iterated the prompt for third time by changing sample examples for trust signals.. final examples became:
+{"type": "trust_signals", "query": "project management tools used by large teams"},
+{"type": "trust_signals", "query": "most popular PM software among engineering teams"},
+
+Some more things I could do / future plan- Honestly this pipeline is still very primitive- If not for assignment, a real production use system will use perhaps a more complex pipelined based structure where I will have one prompt to generate subqueries of each type.. so for example a for each type ie we will cal 5 prompts, each prompt generate a single categorry.. then we will run each query against critic and an incorporation component which will finetune / improve the subqeury even further..
+
+<give example with one situation / dummy etc>
+
+Plus since hardcoded examples are given, there is high chance LLM will overfit on those instances- a more dynamic bank of examples could be used as per industry / usecase etc
+
