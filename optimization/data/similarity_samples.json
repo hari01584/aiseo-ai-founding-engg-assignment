@@ -4,179 +4,139 @@
     "sub_query": "how does Jasper AI compare to human writers for SEO content",
     "query_type": "comparative",
     "content_chunk": "We ran a head-to-head comparison between Jasper AI-generated articles and content written by professional SEO copywriters. AI content scored higher on keyword density but lower on narrative depth.",
-    "label": true,
-    "difficulty": "easy",
-    "notes": "Explicit comparison paragraph present"
+    "label": true
   },
   {
     "id": "s002",
     "sub_query": "AI writing tool vs human writers for SEO",
     "query_type": "comparative",
     "content_chunk": "Our platform is designed to save time for marketing teams.",
-    "label": false,
-    "difficulty": "easy",
-    "notes": "No comparison content at all"
+    "label": false
   },
   {
     "id": "s003",
     "sub_query": "AI SEO writing tool with real-time SERP analysis",
     "query_type": "feature_specific",
     "content_chunk": "The tool integrates with live SERP data to show you how your draft compares to the current top-ranking pages in real time, flagging keyword gaps and structural weaknesses.",
-    "label": true,
-    "difficulty": "easy",
-    "notes": "Direct feature description match"
+    "label": true
   },
   {
     "id": "s004",
     "sub_query": "AI writing tool with keyword clustering feature",
     "query_type": "feature_specific",
     "content_chunk": "Ancient Roman aqueducts were engineering marvels that transported water across hundreds of kilometres.",
-    "label": false,
-    "difficulty": "easy",
-    "notes": "Completely unrelated domain"
+    "label": false
   },
   {
     "id": "s005",
     "sub_query": "AI writing tool for marketing agencies at scale",
     "query_type": "use_case",
     "content_chunk": "Marketing agencies use our platform to produce 50+ pieces of optimised content per month across multiple client accounts, without hiring additional writers.",
-    "label": true,
-    "difficulty": "easy",
-    "notes": "Explicit agency use case"
+    "label": true
   },
   {
     "id": "s006",
     "sub_query": "AI content tool for e-commerce product descriptions",
     "query_type": "use_case",
     "content_chunk": "The platform supports blog posts, landing pages, and long-form guides.",
-    "label": false,
-    "difficulty": "medium",
-    "notes": "Related domain but wrong use case"
+    "label": false
   },
   {
     "id": "s007",
     "sub_query": "AI SEO writing tool customer reviews 2025",
     "query_type": "trust_signals",
     "content_chunk": "Rated 4.8 out of 5 by over 2,000 marketing professionals on G2. Featured in Forbes as one of the top AI tools for content teams in 2025.",
-    "label": true,
-    "difficulty": "easy",
-    "notes": "Reviews and credibility signals present"
+    "label": true
   },
   {
     "id": "s008",
     "sub_query": "AI writing tool case studies results",
     "query_type": "trust_signals",
     "content_chunk": "Our pricing starts at $49 per month for individual users.",
-    "label": false,
-    "difficulty": "easy",
-    "notes": "Pricing info, no trust signals"
+    "label": false
   },
   {
     "id": "s009",
     "sub_query": "how to optimise blog content for SEO using AI",
     "query_type": "how_to",
     "content_chunk": "To optimise a blog post with AI, start by entering your target keyword. The tool will generate a content brief with recommended headings, semantic keywords, and a target word count based on top-ranking competitors.",
-    "label": true,
-    "difficulty": "easy",
-    "notes": "Step-by-step procedural content"
+    "label": true
   },
   {
     "id": "s010",
     "sub_query": "how to use AI tools to improve organic search traffic",
     "query_type": "how_to",
     "content_chunk": "The platform integrates with Google Search Console.",
-    "label": false,
-    "difficulty": "medium",
-    "notes": "Related but no procedural instruction"
+    "label": false
   },
   {
     "id": "s011",
     "sub_query": "what is AI-assisted SEO content writing",
     "query_type": "definitional",
     "content_chunk": "AI-assisted SEO content writing is the practice of using large language models and NLP tools to create, optimise, and structure written content specifically to rank well in search engine results pages.",
-    "label": true,
-    "difficulty": "easy",
-    "notes": "Direct definitional match"
+    "label": true
   },
   {
     "id": "s012",
     "sub_query": "definition of generative AI for content marketing",
     "query_type": "definitional",
     "content_chunk": "Our subscription includes unlimited exports and priority support.",
-    "label": false,
-    "difficulty": "easy",
-    "notes": "Pricing/support content — no definition"
+    "label": false
   },
   {
     "id": "s013",
     "sub_query": "Surfer SEO vs Clearscope content optimisation comparison",
     "query_type": "comparative",
     "content_chunk": "Surfer SEO offers a content editor with NLP scoring while Clearscope focuses on keyword grading. Both tools are used by enterprise content teams but differ in integration options.",
-    "label": true,
-    "difficulty": "medium",
-    "notes": "Comparison present but tools differ slightly from query"
+    "label": true
   },
   {
     "id": "s014",
     "sub_query": "best AI writing tool for solo bloggers",
     "query_type": "use_case",
     "content_chunk": "Individual creators and solo bloggers use the Starter plan to automate their weekly content calendar and maintain consistent publishing schedules.",
-    "label": true,
-    "difficulty": "medium",
-    "notes": "Solo blogger use case covered"
+    "label": true
   },
   {
     "id": "s015",
     "sub_query": "AI writing tool ROI case study enterprise",
     "query_type": "trust_signals",
     "content_chunk": "One enterprise client reduced content production costs by 60% after adopting the platform, producing 3x more content with the same headcount.",
-    "label": true,
-    "difficulty": "medium",
-    "notes": "ROI case study present"
+    "label": true
   },
   {
     "id": "s016",
     "sub_query": "how to brief an AI writing tool for technical content",
     "query_type": "how_to",
     "content_chunk": "For technical topics, provide the AI with a list of required terminology, a target audience description, and three to five reference URLs. The tool will incorporate domain vocabulary while keeping the text scannable.",
-    "label": true,
-    "difficulty": "medium",
-    "notes": "How-to for technical content briefing"
+    "label": true
   },
   {
     "id": "s017",
     "sub_query": "what is semantic keyword clustering in SEO",
     "query_type": "definitional",
     "content_chunk": "Semantic keyword clustering groups related search terms by topic intent rather than exact phrase matching, helping content teams cover a subject comprehensively.",
-    "label": true,
-    "difficulty": "medium",
-    "notes": "Adjacent definition — close but not exact query match"
+    "label": true
   },
   {
     "id": "s018",
     "sub_query": "AI writing tool vs traditional content agency cost",
     "query_type": "comparative",
     "content_chunk": "The platform starts at $49/month.",
-    "label": false,
-    "difficulty": "hard",
-    "notes": "Price mentioned but no cost comparison with agencies"
+    "label": false
   },
   {
     "id": "s019",
     "sub_query": "AI tool for generating FAQ sections automatically",
     "query_type": "feature_specific",
     "content_chunk": "The FAQ generator module takes a topic and produces 10 question-answer pairs formatted for People Also Ask schema markup.",
-    "label": true,
-    "difficulty": "medium",
-    "notes": "Feature description directly matches query"
+    "label": true
   },
   {
     "id": "s020",
     "sub_query": "AI content tool integrations with CMS platforms",
     "query_type": "feature_specific",
     "content_chunk": "Our WordPress plugin and Webflow integration allow one-click publishing directly from the editor.",
-    "label": true,
-    "difficulty": "medium",
-    "notes": "CMS integration feature mentioned"
+    "label": true
   }
 ]
