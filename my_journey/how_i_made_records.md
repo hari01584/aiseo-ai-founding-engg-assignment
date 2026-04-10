@@ -146,3 +146,4 @@ and runs the script to find the best F1 score match across different threshold, 
 
 you can take a look at optimization/threshold_tuning/reports/pair_scores_20260410_194820.csv to understand the covering scores and labels etc
 
+Then I worked on testcases file again, the gap analysis was simple but for query fanout i explicitly had two kinds of testcases, offline which are mocked (to test errors, edge cases, etc) and online simple tests that checks basic sanity again live system 
