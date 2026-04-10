@@ -3,7 +3,11 @@ from __future__ import annotations
 import logging
 from contextlib import asynccontextmanager
 
+from dotenv import load_dotenv
 from fastapi import FastAPI
+
+# Load .env before any service module reads os.environ
+load_dotenv()
 
 from app.api import aeo, fanout
 

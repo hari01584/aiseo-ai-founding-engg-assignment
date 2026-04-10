@@ -9,5 +9,6 @@ torch
 google-generativeai
 openai
 pydantic>=2.0
+python-dotenv
 pytest
 pytest-asyncio
