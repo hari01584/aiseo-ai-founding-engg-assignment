@@ -1,0 +1,66 @@
+run_id,query_id,target_query,comparative,feature_specific,use_case,trust_signals,how_to,definitional,total_sub_queries,count_in_range,all_6_types_present,min_2_per_type,composite_score,missing_types,error
+20260410_183951_278f2a,q001,best AI writing tool for SEO,"## comparative
+- Jasper vs Copy.ai vs Writesonic for SEO
+- Surfer SEO vs Frase vs Clearscope for AI writing","## feature_specific
+- AI writing tool with keyword optimization features
+- best AI content generator for SEO-friendly articles","## use_case
+- AI writing tools for SEO content creation for blogs
+- best AI writing software for e-commerce SEO","## trust_signals
+- reviews of AI writing tools for SEO effectiveness
+- case studies on AI writing tools improving SEO rankings","## how_to
+- how to use AI writing tools for SEO optimization
+- how to generate SEO content with AI writing software","## definitional
+- what is AI writing tool for SEO
+- definition of SEO content generation using AI",12,True,True,True,1.0,,
+20260410_183951_278f2a,q002,best CRM software for startups,"## comparative
+- HubSpot vs Salesforce vs Zoho CRM for startups
+- Pipedrive vs Freshsales for new businesses","## feature_specific
+- CRM software with lead scoring features for startups
+- best CRM for startups with email marketing integration","## use_case
+- CRM solutions for tech startups looking to scale
+- best CRM for early-stage e-commerce startups","## trust_signals
+- CRM software reviews from startup founders
+- case studies of startups using HubSpot CRM","## how_to
+- how to choose the right CRM for a startup
+- how to implement CRM software in a new business","## definitional
+- what is CRM software for startups
+- definition of customer relationship management in startups",12,True,True,True,1.0,,
+20260410_183951_278f2a,q003,project management tools for remote teams,"## comparative
+- Trello vs Asana vs ClickUp for remote teams
+- Basecamp vs Monday.com for distributed teams","## feature_specific
+- project management tools with built-in video conferencing
+- PM software with time tracking and reporting features","## use_case
+- best project management tools for remote software development teams
+- project management solutions for virtual marketing teams","## trust_signals
+- reviews of project management tools for remote collaboration
+- case studies on successful remote project management","## how_to
+- how to choose project management tools for remote teams
+- how to implement project management software for remote work","## definitional
+- what are project management tools for remote teams
+- definition of remote project management software",12,True,True,True,1.0,,
+20260410_183951_278f2a,q004,email marketing platform for e-commerce,"## comparative
+- Mailchimp vs Klaviyo for e-commerce
+- Constant Contact vs Sendinblue for online stores","## feature_specific
+- email marketing platform with automated cart abandonment emails
+- e-commerce email tool with advanced segmentation features","## use_case
+- best email marketing platform for Shopify stores
+- email marketing solutions for small e-commerce businesses","## trust_signals
+- reviews of email marketing platforms for e-commerce
+- case studies on successful e-commerce email campaigns","## how_to
+- how to create effective email campaigns for e-commerce
+- how to increase e-commerce sales with email marketing","## definitional
+- what is email marketing for e-commerce
+- definition of e-commerce email automation",12,True,True,True,1.0,,
+20260410_183951_278f2a,q005,cloud storage solutions for small businesses,"## comparative
+- Google Drive vs Dropbox vs OneDrive for small businesses
+- best cloud storage options for startups compared","## feature_specific
+- cloud storage with file sharing capabilities for small teams
+- cloud storage solutions with automatic backup features","## use_case
+- cloud storage solutions for small retail businesses
+- best cloud storage for small business accounting firms","## trust_signals
+- reviews of cloud storage solutions for small businesses
+- case studies of small businesses using cloud storage","## how_to
+- how to choose cloud storage for a small business
+- how to set up cloud storage for a small team","## definitional
+- what is cloud storage for small businesses
+- definition of cloud storage solutions",12,True,True,True,1.0,,

@@ -1,9 +1,8 @@
 """
 run_prompt_eval.py
 ~~~~~~~~~~~~~~~~~~
-Fan-out output logger — generates a CSV of the actual sub-queries produced
-by ``gpt-4o-mini`` for each target query in the evaluation set, plus a
-per-query score row based on the README's explicit requirements.
+Fan-out output logger — generates a single combined CSV with one row per
+query: all sub-queries grouped by type in markdown, plus per-query scores.
 
 Usage
 -----
@@ -15,19 +14,27 @@ For each target query in ``optimization/data/prompt_eval_queries.json``:
   1. Calls ``generate_sub_queries`` (production engine — same retry logic,
      same validation, same prompt as the live API).
   2. All 5 queries are executed in parallel (batch size = 5).
-  3. Writes two CSV files to ``optimization/prompt_tuning/logs/``:
+  3. Writes one combined CSV to ``optimization/prompt_tuning/logs/``.
 
-     run_<id>_subqueries.csv  — one row per sub-query (what did the model say?)
-     run_<id>_scores.csv      — one row per query    (did it meet the spec?)
+CSV layout — one row per query
+-------------------------------
+  run_id | query_id | target_query
+  [per type column]  comparative | feature_specific | use_case |
+                     trust_signals | how_to | definitional
+      Each cell contains a markdown block:
+        ## comparative
+        - Jasper vs Copy.ai for SEO writing
+        - Surfer SEO vs Frase for AI content
+  total_sub_queries | count_in_range | all_6_types_present | min_2_per_type
+  composite_score   | missing_types  | error
 
 Score dimensions (from README requirements)
 -------------------------------------------
-  json_valid          — engine parsed + validated the response without error
   count_in_range      — 10 ≤ total ≤ 15
   all_6_types_present — all 6 type identifiers appear at least once
   min_2_per_type      — every type has ≥ 2 sub-queries
-  no_missing_types    — alias: same as all_6_types_present (explicit README check)
-  composite_score     — (passed dimensions) / 4  → 0.0–1.0
+  composite_score     — passed / 3  → 0.0–1.0
+  missing_types       — comma-separated list of types with 0 sub-queries
 
 Environment variables required
 -------------------------------
@@ -42,7 +49,7 @@ import uuid
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Tuple
 
 # ── sys.path & env setup (must come before app imports) ────────────────────
 _REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -69,101 +76,122 @@ _LOGS_DIR   = _REPO_ROOT / "optimization" / "prompt_tuning" / "logs"
 _MODEL      = "gpt-4o-mini"
 _BATCH_SIZE = 5   # parallel workers — one per query in the default eval set
 
-_SQ_FIELDS = [
-    "run_id",
-    "query_id",
-    "target_query",
-    "sub_query_index",
-    "sub_query_type",
-    "sub_query_text",
+# Types in a stable display order
+_TYPE_ORDER: List[str] = [
+    "comparative",
+    "feature_specific",
+    "use_case",
+    "trust_signals",
+    "how_to",
+    "definitional",
 ]
 
-_SCORE_FIELDS = [
+_CSV_FIELDS: List[str] = [
     "run_id",
     "query_id",
     "target_query",
-    "total_sub_queries",   # raw count
-    "count_in_range",      # 10–15 → True/False
-    "all_6_types_present", # all 6 type identifiers found → True/False
-    "min_2_per_type",      # every type has ≥ 2 → True/False
-    "types_breakdown",     # JSON string: {"comparative": 3, ...}
-    "missing_types",       # comma-separated missing types, empty if none
-    "composite_score",     # 0.0–1.0  (4 binary dimensions)
-    "error",               # non-empty if LLMUnavailableError was raised
+    *_TYPE_ORDER,             # one markdown column per type
+    "total_sub_queries",
+    "count_in_range",
+    "all_6_types_present",
+    "min_2_per_type",
+    "composite_score",
+    "missing_types",
+    "error",
 ]
+
+# ---------------------------------------------------------------------------
+# Markdown formatter
+# ---------------------------------------------------------------------------
+
+
+def _type_markdown(type_name: str, queries: List[str]) -> str:
+    """
+    Render one type's sub-queries as a compact markdown block.
+
+      ## comparative
+      - Jasper vs Copy.ai for SEO
+      - Surfer SEO vs Frase for AI content
+
+    Empty if no queries were generated for this type.
+    """
+    if not queries:
+        return ""
+    lines = [f"## {type_name}"] + [f"- {q}" for q in queries]
+    return "\n".join(lines)
+
 
 # ---------------------------------------------------------------------------
 # Post-analysis scorer
-# (operates on validated SubQuery objects — no raw text parsing needed here
-#  because the engine already guaranteed structural validity before returning)
 # ---------------------------------------------------------------------------
 
-_MIN_TOTAL = 10
-_MAX_TOTAL = 15
+_MIN_TOTAL    = 10
+_MAX_TOTAL    = 15
 _MIN_PER_TYPE = 2
-# 4 binary dimensions the README explicitly checks:
-_N_DIMENSIONS = 4
+_N_DIMENSIONS = 3   # count_in_range, all_6_types_present, min_2_per_type
 
 
-def score_sub_queries(
-    sub_queries: List[SubQuery],
-) -> Dict[str, Any]:
+def _score(sub_queries: List[SubQuery]) -> Dict[str, Any]:
     """
-    Score a list of validated SubQuery objects against the README spec.
+    Score validated SubQuery objects against the README spec.
 
-    Dimensions (each binary, equally weighted):
-      1. count_in_range      — 10 ≤ len ≤ 15
-      2. all_6_types_present — all 6 valid types appear ≥ 1 time
-      3. min_2_per_type      — every type appears ≥ 2 times
-
-    composite_score = passed / _N_DIMENSIONS  (range 0.0–1.0)
-
-    Note: ``json_valid`` is implicitly True here — the engine raises
-    ``LLMUnavailableError`` before returning if the JSON was bad.
-    That failure path is recorded as an error row in the score CSV.
+    Returns a flat dict ready to merge into a CSV row.
+    ``json_valid`` is implicitly True — the engine raises before returning
+    on bad JSON; that failure is recorded in the ``error`` column instead.
     """
     counts: Dict[str, int] = {t: 0 for t in _VALID_TYPES}
+    grouped: Dict[str, List[str]] = {t: [] for t in _VALID_TYPES}
     for sq in sub_queries:
         if sq.type in counts:
             counts[sq.type] += 1
+            grouped[sq.type].append(sq.query)
 
-    total            = len(sub_queries)
-    count_ok         = _MIN_TOTAL <= total <= _MAX_TOTAL
-    all_types_ok     = all(counts[t] >= 1 for t in _VALID_TYPES)
-    min_per_type_ok  = all(counts[t] >= _MIN_PER_TYPE for t in _VALID_TYPES)
-    missing          = sorted(t for t in _VALID_TYPES if counts[t] == 0)
+    total           = len(sub_queries)
+    count_ok        = _MIN_TOTAL <= total <= _MAX_TOTAL
+    all_types_ok    = all(counts[t] >= 1 for t in _VALID_TYPES)
+    min_per_type_ok = all(counts[t] >= _MIN_PER_TYPE for t in _VALID_TYPES)
+    missing         = sorted(t for t in _VALID_TYPES if counts[t] == 0)
+    under           = sorted(
+        f"{t}({counts[t]})" for t in _VALID_TYPES
+        if 0 < counts[t] < _MIN_PER_TYPE
+    )
 
-    passed           = sum([count_ok, all_types_ok, min_per_type_ok])
-    composite        = round(passed / _N_DIMENSIONS, 4)
+    # missing_types shows zero-count types; also flag under-represented ones
+    missing_label = ", ".join(missing)
+    if under:
+        missing_label += (" | under-represented: " + ", ".join(under)) if missing_label else "under-represented: " + ", ".join(under)
+
+    passed    = sum([count_ok, all_types_ok, min_per_type_ok])
+    composite = round(passed / _N_DIMENSIONS, 4)
 
     return {
+        **{t: _type_markdown(t, grouped[t]) for t in _TYPE_ORDER},
         "total_sub_queries":   total,
         "count_in_range":      count_ok,
         "all_6_types_present": all_types_ok,
         "min_2_per_type":      min_per_type_ok,
-        "types_breakdown":     json.dumps(counts),
-        "missing_types":       ", ".join(missing),
         "composite_score":     composite,
+        "missing_types":       missing_label,
         "error":               "",
     }
 
 
-def _error_score(exc: Exception) -> Dict[str, Any]:
-    """Return a zero-score dict for a query that failed entirely."""
+def _error_row() -> Dict[str, Any]:
+    """Zero-score row used when the engine raises LLMUnavailableError."""
     return {
+        **{t: "" for t in _TYPE_ORDER},
         "total_sub_queries":   0,
         "count_in_range":      False,
         "all_6_types_present": False,
         "min_2_per_type":      False,
-        "types_breakdown":     json.dumps({t: 0 for t in _VALID_TYPES}),
-        "missing_types":       ", ".join(sorted(_VALID_TYPES)),
         "composite_score":     0.0,
-        "error":               str(exc),
+        "missing_types":       ", ".join(_TYPE_ORDER),
+        "error":               "",   # filled in by caller
     }
 
 
 # ---------------------------------------------------------------------------
-# Per-query worker  (runs inside a thread-pool worker)
+# Per-query worker
 # ---------------------------------------------------------------------------
 
 
@@ -172,41 +200,16 @@ def _run_query(
     config: FanOutConfig,
     query_id: str,
     target_query: str,
-) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
-    """
-    Generate sub-queries for one target query and return:
-      - list of sub-query row dicts  (for the subqueries CSV)
-      - one score row dict           (for the scores CSV)
-
-    Designed to be called from a ThreadPoolExecutor worker.
-    """
+) -> Dict[str, Any]:
+    """Generate sub-queries and return one combined CSV row dict."""
+    base = {"run_id": run_id, "query_id": query_id, "target_query": target_query}
     try:
         sub_queries = generate_sub_queries(target_query, config)
+        return {**base, **_score(sub_queries)}
     except LLMUnavailableError as exc:
-        score_row = {"run_id": run_id, "query_id": query_id,
-                     "target_query": target_query, **_error_score(exc)}
-        return [], score_row
-
-    sq_rows = [
-        {
-            "run_id":          run_id,
-            "query_id":        query_id,
-            "target_query":    target_query,
-            "sub_query_index": i,
-            "sub_query_type":  sq.type,
-            "sub_query_text":  sq.query,
-        }
-        for i, sq in enumerate(sub_queries, start=1)
-    ]
-
-    score_row = {
-        "run_id":       run_id,
-        "query_id":     query_id,
-        "target_query": target_query,
-        **score_sub_queries(sub_queries),
-    }
-
-    return sq_rows, score_row
+        row = _error_row()
+        row["error"] = str(exc)
+        return {**base, **row}
 
 
 # ---------------------------------------------------------------------------
@@ -215,7 +218,7 @@ def _run_query(
 
 
 def run_eval() -> None:
-    """Run all queries in parallel, write both CSVs, print a summary."""
+    """Run all queries in parallel, write combined CSV, print a summary."""
     queries = json.loads(_DATA_FILE.read_text())
     run_id  = datetime.now().strftime("%Y%m%d_%H%M%S") + "_" + uuid.uuid4().hex[:6]
     config  = FanOutConfig(model_name=_MODEL)
@@ -223,8 +226,7 @@ def run_eval() -> None:
     print(f"\nFan-out eval  run_id={run_id}  model={_MODEL}")
     print(f"Queries: {len(queries)}  workers: {min(_BATCH_SIZE, len(queries))}\n")
 
-    all_sq_rows:    List[Dict[str, Any]] = []
-    all_score_rows: List[Dict[str, Any]] = []
+    rows: List[Dict[str, Any]] = []
 
     with ThreadPoolExecutor(max_workers=_BATCH_SIZE) as pool:
         futures = {
@@ -232,66 +234,56 @@ def run_eval() -> None:
             for q in queries
         }
         for future in as_completed(futures):
-            q = futures[future]
-            sq_rows, score_row = future.result()
-            all_sq_rows.extend(sq_rows)
-            all_score_rows.append(score_row)
+            q   = futures[future]
+            row = future.result()
+            rows.append(row)
 
             status = (
-                f"{score_row['total_sub_queries']} sub-queries  "
-                f"score={score_row['composite_score']:.2f}"
-                if not score_row["error"]
-                else f"FAILED — {score_row['error'][:60]}"
+                f"{row['total_sub_queries']} sub-queries  score={row['composite_score']:.2f}"
+                if not row["error"]
+                else f"FAILED — {row['error'][:60]}"
             )
             print(f"  [{q['id']}] {q['query'][:55]} … {status}")
 
-    # Sort by query_id so the CSV is deterministic regardless of thread order
-    all_sq_rows.sort(key=lambda r: (r["query_id"], r["sub_query_index"]))
-    all_score_rows.sort(key=lambda r: r["query_id"])
+    rows.sort(key=lambda r: r["query_id"])
 
     _LOGS_DIR.mkdir(parents=True, exist_ok=True)
-    sq_path    = _LOGS_DIR / f"run_{run_id}_subqueries.csv"
-    score_path = _LOGS_DIR / f"run_{run_id}_scores.csv"
+    csv_path = _LOGS_DIR / f"run_{run_id}.csv"
 
-    _write_csv(all_sq_rows, _SQ_FIELDS, sq_path)
-    _write_csv(all_score_rows, _SCORE_FIELDS, score_path)
-
-    print(f"\nSubqueries CSV → {sq_path}")
-    print(f"Scores CSV     → {score_path}")
-    _print_summary(all_score_rows)
-
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-
-def _write_csv(rows: List[Dict[str, Any]], fields: List[str], path: Path) -> None:
-    with path.open("w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=fields, extrasaction="ignore")
+    with csv_path.open("w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=_CSV_FIELDS, extrasaction="ignore")
         writer.writeheader()
         writer.writerows(rows)
 
+    print(f"\nCSV written → {csv_path}")
+    _print_summary(rows)
 
-def _print_summary(score_rows: List[Dict[str, Any]]) -> None:
+
+# ---------------------------------------------------------------------------
+# Summary printer
+# ---------------------------------------------------------------------------
+
+
+def _print_summary(rows: List[Dict[str, Any]]) -> None:
     print("\n── Per-query score summary ────────────────────────────────────")
-    header = f"{'query_id':>8}  {'total':>5}  {'range':>5}  {'6types':>6}  {'min2':>4}  {'score':>6}"
-    print(header)
-    print("-" * len(header))
-    for r in score_rows:
+    print(f"{'query_id':>8}  {'total':>5}  {'range':>5}  {'6types':>6}  {'min2':>4}  {'score':>6}  missing")
+    print("-" * 72)
+    for r in rows:
         if r["error"]:
-            print(f"  {r['query_id']:>6}  ERROR: {r['error'][:50]}")
+            print(f"  {r['query_id']:>6}  ERROR: {r['error'][:55]}")
             continue
+        missing = r["missing_types"] or "—"
         print(
             f"  {r['query_id']:>6}  "
             f"{r['total_sub_queries']:>5}  "
             f"{'✓' if r['count_in_range']      else '✗':>5}  "
             f"{'✓' if r['all_6_types_present'] else '✗':>6}  "
             f"{'✓' if r['min_2_per_type']      else '✗':>4}  "
-            f"{r['composite_score']:>6.2f}"
+            f"{r['composite_score']:>6.2f}  {missing}"
         )
-    avg = sum(r["composite_score"] for r in score_rows) / len(score_rows)
-    print(f"\n  avg composite: {avg:.3f}")
+    ok   = [r for r in rows if not r["error"]]
+    avg  = sum(r["composite_score"] for r in ok) / len(ok) if ok else 0.0
+    print(f"\n  avg composite: {avg:.3f}  ({len(ok)}/{len(rows)} queries succeeded)")
 
 
 if __name__ == "__main__":
