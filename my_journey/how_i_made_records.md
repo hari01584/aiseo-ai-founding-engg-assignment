@@ -130,3 +130,19 @@ Final CSV containing final LLM outputs:-> <previous path of same folder etc>/fin
 
 Now it's time to optimize the parameter for threshold / covered matching
 
+# To tune threshold.. i used the parameter tuning script which is run by:
+python3 optimization/threshold_tuning/run_sweep.py
+how it works is it takes list of hand labelled samples for example:
+  {
+    "id": "s001",
+    "sub_query": "how does Jasper AI compare to human writers for SEO content",
+    "query_type": "comparative",
+    "content_chunk": "We ran a head-to-head comparison between Jasper AI-generated articles and content written by professional SEO copywriters. AI content scored higher on keyword density but lower on narrative depth.",
+    "label": true
+  },
+
+and runs the script to find the best F1 score match across different threshold, which we finalise as our optimum value.. ie:
+![Optimize threshold for covering](threshold_optimization_coverage.png)
+
+you can take a look at optimization/threshold_tuning/reports/pair_scores_20260410_194820.csv to understand the covering scores and labels etc
+
