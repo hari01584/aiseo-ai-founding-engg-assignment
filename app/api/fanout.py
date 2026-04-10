@@ -20,7 +20,6 @@ from app.models.schemas import (
     LLMUnavailableError,
 )
 from app.services.fanout_engine import FanOutConfig, generate_sub_queries
-from app.services.fanout_prompts import DEFAULT_PROMPT
 from app.services.gap_analyzer import (
     DEFAULT_SIMILARITY_THRESHOLD,
     analyse_gaps,
@@ -32,12 +31,8 @@ router = APIRouter()
 
 
 def _build_config() -> FanOutConfig:
-    """Build the FanOutConfig from the default prompt — swappable for tests."""
-    return FanOutConfig(
-        system_prompt=DEFAULT_PROMPT.system_message,
-        user_template=DEFAULT_PROMPT.user_template,
-        model_name="gemini-1.5-flash",
-    )
+    """Build the FanOutConfig — swappable for tests."""
+    return FanOutConfig(model_name="gpt-4o-mini")
 
 
 @router.post(

@@ -1,28 +1,27 @@
 """
 fanout_engine.py
 ~~~~~~~~~~~~~~~~
-LLM-powered query fan-out engine.
+LLM-powered query fan-out engine (OpenAI only).
 
 Responsibility
 --------------
-1. Accept a target query + a prompt config object (injected — no hardcoded text).
-2. Call the configured LLM with retry + exponential back-off.
-3. Parse and validate the raw LLM response string into a List[SubQuery].
-4. Enforce structural constraints (min total, min per type).
-5. Return the validated sub-query list or raise LLMUnavailableError.
+1. Accept a target query and call OpenAI with retry + exponential back-off.
+2. Parse and validate the raw LLM response string into a List[SubQuery].
+3. Enforce structural constraints (min total, min per type).
+4. Return the validated sub-query list or raise LLMUnavailableError.
 
 What lives HERE
 ---------------
-  - LLM client wrappers (Gemini / OpenAI — selected by env var)
+  - The prompt (single source of truth — _SYSTEM_PROMPT / _USER_TEMPLATE)
+  - OpenAI client call
   - JSON extraction from raw text (fence stripping, json.loads, Pydantic)
   - Retry / back-off logic
   - Structural validation helpers (independently testable pure functions)
 
 What does NOT live here
 -----------------------
-  - Prompt text strings  →  app/services/fanout_prompts.py
   - Embedding / cosine logic  →  app/services/gap_analyzer.py
-  - HTTP routing  →  app/api/fanout.py
+  - HTTP routing              →  app/api/fanout.py
 """
 from __future__ import annotations
 
@@ -31,18 +30,17 @@ import logging
 import os
 import re
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
-from app.models.schemas import LLMUnavailableError, SubQuery, SubQueryType
+from app.models.schemas import LLMUnavailableError, SubQuery
 
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
-# Configuration dataclass — injected at call site, never hardcoded here
+# Valid sub-query types
 # ---------------------------------------------------------------------------
 
-#: All valid sub-query type literals in one place for validation
 _VALID_TYPES: frozenset[str] = frozenset(
     [
         "comparative",
@@ -54,26 +52,86 @@ _VALID_TYPES: frozenset[str] = frozenset(
     ]
 )
 
+# ---------------------------------------------------------------------------
+# Prompt — single source of truth
+# ---------------------------------------------------------------------------
+
+_SYSTEM_PROMPT = """\
+You are a query decomposition engine for an AI content optimisation platform.
+
+YOUR ROLE
+You simulate how AI search engines (Perplexity, ChatGPT Search, Google AI Mode) break
+a user query into sub-queries before generating a comprehensive answer. Your output is
+used to identify gaps in a content article.
+
+TASK
+Given a target query, generate between 10 and 15 sub-queries that span all six types
+listed below. Cover the query topic thoroughly and generically — the same prompt must
+work for any domain (SEO tools, CRM software, project management, etc.).
+
+THE SIX SUB-QUERY TYPES
+You must use EXACTLY these identifiers as the "type" field value:
+
+  comparative      — how the subject compares against competitors or alternatives
+  feature_specific — a specific feature, capability, or attribute
+  use_case         — a concrete real-world application or audience segment
+  trust_signals    — reviews, testimonials, case studies, awards, proof points
+  how_to           — a procedural, instructional, or "how do I" angle
+  definitional     — a conceptual, explanatory, or "what is" angle
+
+HARD CONSTRAINTS
+1. Generate at least 2 sub-queries for EVERY type (12 minimum across all six types).
+2. Total sub-queries must be between 10 and 15 inclusive.
+3. Each sub-query must be a realistic search query string — not a sentence fragment.
+4. Return ONLY a valid JSON object. No markdown fences. No prose. No extra fields.
+5. The JSON must match this schema exactly:
+
+{
+  "sub_queries": [
+    {"type": "<one of the six types above>", "query": "<search query string>"},
+    ...
+  ]
+}
+
+EXAMPLE — for target query "best project management software for remote teams":
+{
+  "sub_queries": [
+    {"type": "comparative", "query": "Asana vs Monday.com vs Notion for remote teams"},
+    {"type": "comparative", "query": "Jira vs ClickUp for distributed engineering teams"},
+    {"type": "feature_specific", "query": "project management tool with async video updates"},
+    {"type": "feature_specific", "query": "PM software with time zone management features"},
+    {"type": "use_case", "query": "project management software for remote marketing agencies"},
+    {"type": "use_case", "query": "best PM tool for fully distributed startup teams"},
+    {"type": "trust_signals", "query": "project management software reviews from remote-first companies"},
+    {"type": "trust_signals", "query": "Monday.com vs Asana case studies remote work 2025"},
+    {"type": "how_to", "query": "how to manage remote team projects with no meetings"},
+    {"type": "how_to", "query": "how to track distributed team progress in real time"},
+    {"type": "definitional", "query": "what is asynchronous project management"},
+    {"type": "definitional", "query": "definition of remote-first project workflow"}
+  ]
+}
+
+Now generate sub-queries for the target query provided by the user.\
+"""
+
+_USER_TEMPLATE = "Target query: {target_query}"
+
+# ---------------------------------------------------------------------------
+# Configuration dataclass
+# ---------------------------------------------------------------------------
+
 
 @dataclass
 class FanOutConfig:
     """
-    Injected configuration for one fan-out request.
+    Runtime configuration for one fan-out request.
 
     Parameters
     ----------
-    system_prompt:
-        The system-role message sent to the LLM.  Must instruct the model to
-        return a JSON object with a ``sub_queries`` array.  Lives in
-        fanout_prompts.py — never inlined here.
-    user_template:
-        A format-string with a single ``{target_query}`` placeholder.
     model_name:
-        LLM model identifier, e.g. ``"gemini-1.5-flash"`` or
-        ``"gpt-4o-mini"``.
+        OpenAI model identifier, e.g. ``"gpt-4o-mini"``.
     min_total:
-        Minimum number of sub-queries required.  Raise if the LLM returns
-        fewer even after retries.
+        Minimum number of sub-queries required.
     min_per_type:
         Minimum sub-queries per query type.
     max_retries:
@@ -82,9 +140,7 @@ class FanOutConfig:
         Seconds to wait before the first retry (doubles each attempt).
     """
 
-    system_prompt: str
-    user_template: str
-    model_name: str = "gemini-1.5-flash"
+    model_name: str = "gpt-4o-mini"
     min_total: int = 10
     min_per_type: int = 2
     max_retries: int = 3
@@ -206,30 +262,13 @@ def check_structural_constraints(
 
 
 # ---------------------------------------------------------------------------
-# LLM client helpers  (thin wrappers — swap provider via env var)
+# LLM client helper  (OpenAI only)
 # ---------------------------------------------------------------------------
 
 
-def _call_gemini(model_name: str, system_prompt: str, user_message: str) -> str:
-    """Call Google Gemini and return the raw text response."""
-    import google.generativeai as genai  # lazy import — optional dep
-
-    api_key = os.environ.get("GEMINI_API_KEY", "")
-    if not api_key:
-        raise EnvironmentError("GEMINI_API_KEY environment variable is not set")
-
-    genai.configure(api_key=api_key)
-    model = genai.GenerativeModel(
-        model_name=model_name,
-        system_instruction=system_prompt,
-    )
-    response = model.generate_content(user_message)
-    return response.text
-
-
-def _call_openai(model_name: str, system_prompt: str, user_message: str) -> str:
+def _call_llm(model_name: str, system_prompt: str, user_message: str) -> str:
     """Call OpenAI and return the raw text response."""
-    from openai import OpenAI  # lazy import — optional dep
+    from openai import OpenAI  # lazy import — keeps startup fast
 
     api_key = os.environ.get("OPENAI_API_KEY", "")
     if not api_key:
@@ -245,18 +284,6 @@ def _call_openai(model_name: str, system_prompt: str, user_message: str) -> str:
         temperature=0.2,
     )
     return response.choices[0].message.content or ""
-
-
-def _call_llm(model_name: str, system_prompt: str, user_message: str) -> str:
-    """
-    Dispatch to the correct provider based on model name prefix.
-
-    ``gpt-*``    → OpenAI
-    ``gemini-*`` → Google Gemini
-    """
-    if model_name.startswith("gpt"):
-        return _call_openai(model_name, system_prompt, user_message)
-    return _call_gemini(model_name, system_prompt, user_message)
 
 
 # ---------------------------------------------------------------------------
@@ -301,7 +328,7 @@ def generate_sub_queries(
     LLMUnavailableError
         If all retries are exhausted without a valid response.
     """
-    user_message = config.user_template.format(target_query=target_query)
+    user_message = _USER_TEMPLATE.format(target_query=target_query)
     last_error: Optional[str] = None
 
     for attempt in range(1, config.max_retries + 1):
@@ -312,7 +339,7 @@ def generate_sub_queries(
                 config.max_retries,
                 target_query,
             )
-            raw = _call_llm(config.model_name, config.system_prompt, user_message)
+            raw = _call_llm(config.model_name, _SYSTEM_PROMPT, user_message)
 
             raw_list = parse_llm_response(raw)
             sub_queries = validate_sub_queries(raw_list)

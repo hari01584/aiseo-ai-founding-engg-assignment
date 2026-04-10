@@ -38,7 +38,6 @@ from app.services.fanout_engine import (
     strip_markdown_fences,
     validate_sub_queries,
 )
-from app.services.fanout_prompts import DEFAULT_PROMPT
 
 # ---------------------------------------------------------------------------
 # Shared fixtures & helpers
@@ -59,11 +58,9 @@ def _valid_payload(n_per_type: int = 2) -> str:
 
 
 def _make_config(max_retries: int = 3) -> FanOutConfig:
-    """Minimal config for tests — prompt text injected from DEFAULT_PROMPT."""
+    """Minimal config for tests — uses engine defaults, no prompt fields."""
     return FanOutConfig(
-        system_prompt=DEFAULT_PROMPT.system_message,
-        user_template=DEFAULT_PROMPT.user_template,
-        model_name="gemini-1.5-flash",
+        model_name="gpt-4o-mini",
         min_total=10,
         min_per_type=2,
         max_retries=max_retries,
@@ -306,11 +303,8 @@ class TestFanoutFixtures:
     def test_no_sleep_between_retries_in_tests(self):
         """Retry back-off sleep is zero in tests (retry_base_delay=0.0)."""
         import time
-        config = _make_config(max_retries=3)
         config_zero = FanOutConfig(
-            system_prompt=DEFAULT_PROMPT.system_message,
-            user_template=DEFAULT_PROMPT.user_template,
-            model_name="gemini-1.5-flash",
+            model_name="gpt-4o-mini",
             min_total=10,
             min_per_type=2,
             max_retries=3,
@@ -338,7 +332,7 @@ class TestFanoutFixtures:
 class TestFanoutLive:
     """
     Calls a real LLM.  Validates structure only — not specific content.
-    Requires GEMINI_API_KEY or OPENAI_API_KEY in environment.
+    Requires OPENAI_API_KEY in environment.
     """
 
     def test_live_returns_valid_structure(self):
