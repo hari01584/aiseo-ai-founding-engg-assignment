@@ -1,58 +1,18 @@
 """
 tests/aeo/check_a/test_has_hedge_phrase.py
 Unit tests for the has_hedge_phrase() helper.
+
+The parametrized detection test is driven directly from _HEDGE_PHRASES so it
+automatically covers any phrase added to the list in the future.
 """
 import pytest
-from app.services.aeo_checks.direct_answer import has_hedge_phrase
+from app.services.aeo_checks.direct_answer import _HEDGE_PHRASES, has_hedge_phrase
 
 
 class TestHasHedgePhrase:
 
-    # ── Every phrase in the list is individually detected ───────────────────
-    @pytest.mark.parametrize("phrase", [
-        # Conditional / contextual
-        "it depends",
-        "this depends",
-        "depending on",
-        "in some cases",
-        "in certain cases",
-        "in some situations",
-        "in certain situations",
-        "under some circumstances",
-        # Variability
-        "may vary",
-        "might vary",
-        "can vary",
-        "this varies",
-        "results may differ",
-        "results can differ",
-        # Approximation / generalisation
-        "generally speaking",
-        "broadly speaking",
-        "in general",
-        "as a general rule",
-        "for the most part",
-        "more or less",
-        "to some extent",
-        "to a certain extent",
-        # Possibility / uncertainty
-        "it is possible",
-        "it may be",
-        "it might be",
-        "it could be",
-        "there is a chance",
-        "not necessarily",
-        # Frequency / typicality
-        "in most cases",
-        "in many cases",
-        "often depends",
-        "typically depends",
-        # Scope-limiting
-        "your mileage may vary",
-        "results may vary",
-        "this is not always",
-        "not always the case",
-    ])
+    # ── Every phrase in the canonical list is individually detected ──────────
+    @pytest.mark.parametrize("phrase", _HEDGE_PHRASES)
     def test_each_phrase_detected(self, phrase: str):
         assert has_hedge_phrase(f"The answer {phrase} on context.") is True
 

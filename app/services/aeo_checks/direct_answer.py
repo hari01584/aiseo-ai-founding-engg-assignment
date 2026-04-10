@@ -167,8 +167,9 @@ def build_recommendation(
             "Trim it to under 60 words with a direct, declarative answer."
         )
     if hedge:
+        examples = ", ".join(f"'{p}'" for p in _HEDGE_PHRASES[:3])
         return (
-            "Remove hedge phrases such as 'it depends', 'may vary', or 'generally speaking'. "
+            f"Remove hedge phrases such as {examples}. "
             "State your answer directly and confidently."
         )
     if not declarative:
