@@ -130,6 +130,10 @@ class FanOutConfig:
     ----------
     model_name:
         OpenAI model identifier, e.g. ``"gpt-4o-mini"``.
+    temperature:
+        Sampling temperature passed to the OpenAI API (0.0–2.0).
+        Lower values produce more deterministic output; default 0.2 matches
+        production.  Vary this in the prompt optimizer to benchmark stability.
     min_total:
         Minimum number of sub-queries required.
     min_per_type:
@@ -141,6 +145,7 @@ class FanOutConfig:
     """
 
     model_name: str = "gpt-4o-mini"
+    temperature: float = 0.2
     min_total: int = 10
     min_per_type: int = 2
     max_retries: int = 3
@@ -266,7 +271,12 @@ def check_structural_constraints(
 # ---------------------------------------------------------------------------
 
 
-def _call_llm(model_name: str, system_prompt: str, user_message: str) -> str:
+def _call_llm(
+    model_name: str,
+    system_prompt: str,
+    user_message: str,
+    temperature: float = 0.2,
+) -> str:
     """Call OpenAI and return the raw text response."""
     from openai import OpenAI  # lazy import — keeps startup fast
 
@@ -281,7 +291,7 @@ def _call_llm(model_name: str, system_prompt: str, user_message: str) -> str:
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_message},
         ],
-        temperature=0.2,
+        temperature=temperature,
     )
     return response.choices[0].message.content or ""
 
@@ -339,7 +349,12 @@ def generate_sub_queries(
                 config.max_retries,
                 target_query,
             )
-            raw = _call_llm(config.model_name, _SYSTEM_PROMPT, user_message)
+            raw = _call_llm(
+                config.model_name,
+                _SYSTEM_PROMPT,
+                user_message,
+                config.temperature,
+            )
 
             raw_list = parse_llm_response(raw)
             sub_queries = validate_sub_queries(raw_list)
