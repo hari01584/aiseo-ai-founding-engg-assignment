@@ -61,9 +61,12 @@ def _score_band(normalized: float) -> str:
     },
     summary="AEO Content Scorer",
     description=(
-        "Accepts a URL or raw HTML/text and runs three AEO checks: "
-        "Direct Answer Detection, H-tag Hierarchy, and Snippet Readability. "
-        "Returns an AEO Readiness Score (0–100) with per-check diagnostics."
+        "Accepts content via **`input_type`**:\n\n"
+        "- **`url`** — a publicly accessible HTTP/HTTPS URL "
+        "(e.g. `https://example.com/article`). The service fetches and parses the page.\n"
+        "- **`text`** — raw HTML or plain text pasted directly as `input_value` "
+        "(e.g. `<h1>...</h1><p>...</p>` or a plain paragraph).\n\n"
+        "Runs three NLP checks and returns an AEO Readiness Score (0–100)."
     ),
 )
 async def analyze(request: AEOAnalyzeRequest) -> JSONResponse:
