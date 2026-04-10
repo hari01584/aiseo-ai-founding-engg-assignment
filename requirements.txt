@@ -1,0 +1,13 @@
+fastapi
+uvicorn[standard]
+httpx
+beautifulsoup4
+spacy
+textstat
+sentence-transformers
+torch
+google-generativeai
+openai
+pydantic>=2.0
+pytest
+pytest-asyncio
