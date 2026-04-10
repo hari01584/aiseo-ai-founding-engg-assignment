@@ -57,11 +57,48 @@ def _get_nlp() -> spacy.language.Language:
 # ── Constants ────────────────────────────────────────────────────────────────
 
 _HEDGE_PHRASES: list[str] = [
+    # Conditional / contextual hedges
     "it depends",
-    "may vary",
+    "this depends",
+    "depending on",
     "in some cases",
+    "in certain cases",
+    "in some situations",
+    "in certain situations",
+    "under some circumstances",
+    # Variability hedges
+    "may vary",
+    "might vary",
+    "can vary",
     "this varies",
+    "results may differ",
+    "results can differ",
+    # Approximation / generalisation hedges
     "generally speaking",
+    "broadly speaking",
+    "in general",
+    "as a general rule",
+    "for the most part",
+    "more or less",
+    "to some extent",
+    "to a certain extent",
+    # Possibility / uncertainty hedges
+    "it is possible",
+    "it may be",
+    "it might be",
+    "it could be",
+    "there is a chance",
+    "not necessarily",
+    # Frequency / typicality hedges
+    "in most cases",
+    "in many cases",
+    "often depends",
+    "typically depends",
+    # Scope-limiting hedges
+    "your mileage may vary",
+    "results may vary",
+    "this is not always",
+    "not always the case",
 ]
 
 _WORD_LIMIT = 60
