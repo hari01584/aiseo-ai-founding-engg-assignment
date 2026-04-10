@@ -111,23 +111,15 @@ def _extract_clean_text(soup: BeautifulSoup) -> str:
 def _extract_first_paragraph_html(soup: BeautifulSoup) -> str:
     """Return the text of the first <p> tag with non-trivial content."""
     for p_tag in soup.find_all("p"):
-        # Skip paragraphs inside boilerplate containers
-        if any(
-            a.name in _BOILERPLATE_TAGS for a in p_tag.parents if hasattr(a, "name")
-        ):
-            continue
         text = p_tag.get_text(separator=" ", strip=True)
-        # Must have at least 15 chars and 3 words to be considered real
-        if len(text) >= 15 and len(text.split()) >= 3:
-            return text
+        return text
     return ""
 
 
 def _extract_first_paragraph_plain(text: str) -> str:
     """For plain text: return the first double-newline-separated block."""
-    blocks = re.split(r"\n{2,}", text.strip())
+    blocks = re.split(r"\n{1,}", text.strip())
     for block in blocks:
         stripped = block.strip()
-        if stripped and len(stripped.split()) >= 3:
-            return stripped
+        return stripped
     return text.strip()

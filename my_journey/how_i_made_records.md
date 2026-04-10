@@ -10,3 +10,7 @@ Finally now time to check code and start implementing testcases for each modular
 CHecking at code, I noticed the testcase generated has one big file with 50+ cases written for check A, but i felt this is not clean and could be refactored- So tweaking the testcase folder structure to accurately depict each function/module and do unit testing, then on top of these unit tests, I will do one big integration test that will combine each smaller functions..
 
 for here example we have aeo/check_a/test_has_hedge_phrase.py which just checks for hedge phrase
+
+Now I went back to the cases and worked on each checks Step by step- First I noticed there is no check for extracting first paragraph, so I made it and then wrote some edge cases etc to verify if paragraph extract is okay or not- However in testcase and code I noticed how it was skipping paragraph which words less than 3- This is something AI Automatically generated, but since I knew we are deliberately scoring on AEO- We should not skip this and instead take small paragraph only (so we will later highlight / flag this saying this is Poor AEO optimized), therefore I removed the logic where the code skipped over small paragraph
+
+I also deliberately removed more cases like skipping <p> tags inside headers, this is to keep the assignment simple- WHile also writing edge cases there were some instances where i had minor doubts: for example what does: Example of first paragraph break in plain text mean? so i used chatgpt to ask with some examples and aligned test case behaviour accordingly
